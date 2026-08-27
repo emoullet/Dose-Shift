@@ -63,9 +63,40 @@ export const pvtSessionSchema = z.discriminatedUnion('source', [
           message: 'PVT presentation orders must be unique'
         });
       }
+
+      const calculatedMedian = median(
+        session.rawTrials.map(({ reactionTimeMs }) => reactionTimeMs)
+      );
+      if (Math.abs(session.medianReactionTimeMs - calculatedMedian) > 1e-12) {
+        context.addIssue({
+          code: 'custom',
+          path: ['medianReactionTimeMs'],
+          message: 'medianReactionTimeMs must be calculated from the raw trials'
+        });
+      }
+
+      const calculatedLapseCount = session.rawTrials.filter(({ reactionTimeMs }) =>
+        reactionTimeMs >= session.lapseThresholdMs).length;
+      if (session.lapseCount !== calculatedLapseCount) {
+        context.addIssue({
+          code: 'custom',
+          path: ['lapseCount'],
+          message: 'lapseCount must be calculated from the raw trials and threshold'
+        });
+      }
     }
   })
   .readonly();
 
 export type PvtTrial = z.infer<typeof pvtTrialSchema>;
 export type PvtSession = z.infer<typeof pvtSessionSchema>;
+
+function median(values: readonly number[]): number {
+  const sortedValues = [...values].sort((left, right) => left - right);
+  const middleIndex = Math.floor(sortedValues.length / 2);
+  if (sortedValues.length % 2 === 1) {
+    return sortedValues[middleIndex]!;
+  }
+
+  return (sortedValues[middleIndex - 1]! + sortedValues[middleIndex]!) / 2;
+}

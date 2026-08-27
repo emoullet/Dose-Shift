@@ -302,8 +302,8 @@ export function createCompleteStudyData(): StudyData {
     analysisAnnotations: [{
       id: createEntityId(),
       studyId,
-      targetType: 'day',
-      targetId: dailyContextId,
+      targetType: 'cognitive_measurement',
+      targetId: completedMeasurementId,
       flag: 'exclude_from_primary_analysis',
       reason: 'Sensitivity-analysis example',
       active: false,

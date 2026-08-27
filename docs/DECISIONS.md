@@ -123,3 +123,9 @@ This includes documentation, source code identifiers, file and directory names, 
 **Decision:** Represent a complete backup unit as one validated `StudyData` aggregate containing a study and all of its study-scoped records. Store top-level entity types in separate IndexedDB version-2 object stores, while embedding ordered PVT and associative-memory trials in their parent sessions. Serialize complete backups with export format version 2, independently of the database version.
 
 **Reason:** The aggregate enforces study ownership at persistence and import boundaries. Separate top-level stores support focused offline access, while embedded trials keep raw test observations atomic with their session summaries. Independent database and export versions preserve the documented versioning boundaries and allow each contract to evolve explicitly.
+
+## 2026-08-27 — Aggregate consistency and explicit backup restoration
+
+**Decision:** Validate cross-record medication, phase, cognitive-slot, raw-PVT, and frozen-configuration invariants at the `StudyData` boundary. Keep `DailyContext.analysis` as the only day-level analysis state. Expose normal append-preserving saves separately from an explicitly named exact backup restoration operation.
+
+**Reason:** Individually valid records can still contradict the frozen protocol or each other. One authoritative day flag prevents competing exclusion state, while distinct save and restore semantics prevent both accidental observation deletion during routine writes and accidental retention of stale records during complete backup restoration.

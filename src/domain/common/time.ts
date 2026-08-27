@@ -28,3 +28,16 @@ export type TimeZone = z.infer<typeof timeZoneSchema>;
 export function nowAsInstant(): Instant {
   return instantSchema.parse(new Date().toISOString());
 }
+
+export function localDateForInstant(instant: Instant, timeZone: TimeZone): LocalDate {
+  const parts = new Intl.DateTimeFormat('en', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(new Date(instant));
+  const value = (type: Intl.DateTimeFormatPartTypes): string =>
+    parts.find((part) => part.type === type)?.value ?? '';
+
+  return localDateSchema.parse(`${value('year')}-${value('month')}-${value('day')}`);
+}

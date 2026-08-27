@@ -3,15 +3,26 @@ import { z } from 'zod';
 import { auditMetadataFields } from '../common/audit';
 import { entityIdSchema } from '../common/identity';
 
-export const analysisAnnotationSchema = z.object({
+const analysisAnnotationBaseFields = {
   id: entityIdSchema,
   studyId: entityIdSchema,
-  targetType: z.enum(['day', 'cognitive_measurement', 'protocol_phase']),
   targetId: entityIdSchema,
-  flag: z.enum(['atypical', 'exclude_from_primary_analysis', 'transition_day']),
   reason: z.string().trim().min(1),
   active: z.boolean(),
   ...auditMetadataFields
-}).strict().readonly();
+} as const;
+
+export const analysisAnnotationSchema = z.discriminatedUnion('targetType', [
+  z.object({
+    ...analysisAnnotationBaseFields,
+    targetType: z.literal('cognitive_measurement'),
+    flag: z.enum(['atypical', 'exclude_from_primary_analysis'])
+  }).strict(),
+  z.object({
+    ...analysisAnnotationBaseFields,
+    targetType: z.literal('protocol_phase'),
+    flag: z.literal('transition_day')
+  }).strict()
+]).readonly();
 
 export type AnalysisAnnotation = z.infer<typeof analysisAnnotationSchema>;

@@ -4,13 +4,24 @@ import { auditMetadataFields } from '../common/audit';
 import { entityIdSchema } from '../common/identity';
 import { instantSchema } from '../common/time';
 
-export const pvtAdministrationConfigurationSchema = z.object({
-  source: z.enum(['external', 'integrated']),
-  implementationVersion: z.string().trim().min(1).optional(),
+const pvtAdministrationConfigurationBaseFields = {
   durationSeconds: z.number().int().positive().optional(),
   device: z.string().trim().min(1),
   responseMethod: z.string().trim().min(1)
-}).strict().readonly();
+} as const;
+
+export const pvtAdministrationConfigurationSchema = z.discriminatedUnion('source', [
+  z.object({
+    ...pvtAdministrationConfigurationBaseFields,
+    source: z.literal('external'),
+    implementationVersion: z.string().trim().min(1).optional()
+  }).strict(),
+  z.object({
+    ...pvtAdministrationConfigurationBaseFields,
+    source: z.literal('integrated'),
+    implementationVersion: z.string().trim().min(1)
+  }).strict()
+]).readonly();
 
 export const cognitiveTestConfigurationSchema = z.object({
   id: entityIdSchema,

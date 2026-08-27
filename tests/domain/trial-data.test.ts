@@ -14,6 +14,27 @@ describe('objective cognitive trial schemas', () => {
     expect(pvtSessionSchema.safeParse(withoutRawTrials).success).toBe(false);
   });
 
+  it('recalculates PVT median reaction time and lapse count from raw trials', () => {
+    const session = createCompleteStudyData().pvtSessions[0]!;
+
+    expect(pvtSessionSchema.safeParse({
+      ...session,
+      medianReactionTimeMs: 321
+    }).success).toBe(false);
+    expect(pvtSessionSchema.safeParse({
+      ...session,
+      lapseCount: 0
+    }).success).toBe(false);
+    expect(pvtSessionSchema.safeParse({
+      ...session,
+      rawTrials: session.rawTrials!.map((trial, index) => index === 2
+        ? { ...trial, reactionTimeMs: 500 }
+        : trial),
+      medianReactionTimeMs: 320,
+      lapseCount: 1
+    }).success).toBe(true);
+  });
+
   it('validates associative-memory summaries against preserved trial data', () => {
     const session = createCompleteStudyData().associativeMemorySessions[0]!;
 

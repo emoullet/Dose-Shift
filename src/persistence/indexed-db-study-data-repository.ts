@@ -1,3 +1,5 @@
+import type { IDBPTransaction } from 'idb';
+
 import type { StudyDataRepository } from '../application/studies/study-data-repository';
 import type { EntityId } from '../domain/common/identity';
 import { analysisAnnotationSchema } from '../domain/analysis/analysis-annotation';
@@ -19,6 +21,7 @@ import { protocolPhaseSchema } from '../domain/study/protocol-phase';
 import { type StudyData, studyDataSchema } from '../domain/study/study-data';
 import { studySchema } from '../domain/study/study';
 import { getDatabase } from './database';
+import type { DoseShiftDatabase } from './schema';
 
 const studyDataStoreNames = [
   'studies',
@@ -104,38 +107,97 @@ export class IndexedDbStudyDataRepository implements StudyDataRepository {
     const data = studyDataSchema.parse(studyData);
     const database = await getDatabase();
     const transaction = database.transaction(studyDataStoreNames, 'readwrite');
-
-    const configurationStore = transaction.objectStore('cognitiveTestConfigurations');
-    const phaseStore = transaction.objectStore('protocolPhases');
-    const medicationStore = transaction.objectStore('medicationIntakes');
-    const cognitiveStore = transaction.objectStore('cognitiveMeasurements');
-    const pvtStore = transaction.objectStore('pvtSessions');
-    const memoryStore = transaction.objectStore('associativeMemorySessions');
-    const catheterizationStore = transaction.objectStore('catheterizationEvents');
-    const nightStore = transaction.objectStore('nightObservations');
-    const dailyContextStore = transaction.objectStore('dailyContexts');
-    const caffeineStore = transaction.objectStore('caffeineIntakes');
-    const alcoholStore = transaction.objectStore('alcoholIntakes');
-    const additionalMedicationStore = transaction.objectStore('additionalMedicationIntakes');
-    const annotationStore = transaction.objectStore('analysisAnnotations');
-    const auditStore = transaction.objectStore('auditEntries');
-
-    transaction.objectStore('studies').put(data.study);
-    data.cognitiveTestConfigurations.forEach((value) => configurationStore.put(value));
-    data.protocolPhases.forEach((value) => phaseStore.put(value));
-    data.medicationIntakes.forEach((value) => medicationStore.put(value));
-    data.cognitiveMeasurements.forEach((value) => cognitiveStore.put(value));
-    data.pvtSessions.forEach((value) => pvtStore.put(value));
-    data.associativeMemorySessions.forEach((value) => memoryStore.put(value));
-    data.catheterizationEvents.forEach((value) => catheterizationStore.put(value));
-    data.nightObservations.forEach((value) => nightStore.put(value));
-    data.dailyContexts.forEach((value) => dailyContextStore.put(value));
-    data.caffeineIntakes.forEach((value) => caffeineStore.put(value));
-    data.alcoholIntakes.forEach((value) => alcoholStore.put(value));
-    data.additionalMedicationIntakes.forEach((value) => additionalMedicationStore.put(value));
-    data.analysisAnnotations.forEach((value) => annotationStore.put(value));
-    data.auditEntries.forEach((value) => auditStore.put(value));
-
+    putStudyData(transaction, data);
     await transaction.done;
+  }
+
+  public async restoreBackup(studyData: readonly StudyData[]): Promise<void> {
+    const data = studyData.map((value) => studyDataSchema.parse(value));
+    assertUniqueBackupKeys(data);
+    const database = await getDatabase();
+    const transaction = database.transaction(studyDataStoreNames, 'readwrite');
+
+    await Promise.all([
+      transaction.objectStore('studies').clear(),
+      transaction.objectStore('cognitiveTestConfigurations').clear(),
+      transaction.objectStore('protocolPhases').clear(),
+      transaction.objectStore('medicationIntakes').clear(),
+      transaction.objectStore('cognitiveMeasurements').clear(),
+      transaction.objectStore('pvtSessions').clear(),
+      transaction.objectStore('associativeMemorySessions').clear(),
+      transaction.objectStore('catheterizationEvents').clear(),
+      transaction.objectStore('nightObservations').clear(),
+      transaction.objectStore('dailyContexts').clear(),
+      transaction.objectStore('caffeineIntakes').clear(),
+      transaction.objectStore('alcoholIntakes').clear(),
+      transaction.objectStore('additionalMedicationIntakes').clear(),
+      transaction.objectStore('analysisAnnotations').clear(),
+      transaction.objectStore('auditEntries').clear()
+    ]);
+
+    data.forEach((value) => putStudyData(transaction, value));
+    await transaction.done;
+  }
+}
+
+type StudyDataTransaction = IDBPTransaction<
+  DoseShiftDatabase,
+  typeof studyDataStoreNames,
+  'readwrite'
+>;
+
+function putStudyData(transaction: StudyDataTransaction, data: StudyData): void {
+  const configurationStore = transaction.objectStore('cognitiveTestConfigurations');
+  const phaseStore = transaction.objectStore('protocolPhases');
+  const medicationStore = transaction.objectStore('medicationIntakes');
+  const cognitiveStore = transaction.objectStore('cognitiveMeasurements');
+  const pvtStore = transaction.objectStore('pvtSessions');
+  const memoryStore = transaction.objectStore('associativeMemorySessions');
+  const catheterizationStore = transaction.objectStore('catheterizationEvents');
+  const nightStore = transaction.objectStore('nightObservations');
+  const dailyContextStore = transaction.objectStore('dailyContexts');
+  const caffeineStore = transaction.objectStore('caffeineIntakes');
+  const alcoholStore = transaction.objectStore('alcoholIntakes');
+  const additionalMedicationStore = transaction.objectStore('additionalMedicationIntakes');
+  const annotationStore = transaction.objectStore('analysisAnnotations');
+  const auditStore = transaction.objectStore('auditEntries');
+
+  transaction.objectStore('studies').put(data.study);
+  data.cognitiveTestConfigurations.forEach((value) => configurationStore.put(value));
+  data.protocolPhases.forEach((value) => phaseStore.put(value));
+  data.medicationIntakes.forEach((value) => medicationStore.put(value));
+  data.cognitiveMeasurements.forEach((value) => cognitiveStore.put(value));
+  data.pvtSessions.forEach((value) => pvtStore.put(value));
+  data.associativeMemorySessions.forEach((value) => memoryStore.put(value));
+  data.catheterizationEvents.forEach((value) => catheterizationStore.put(value));
+  data.nightObservations.forEach((value) => nightStore.put(value));
+  data.dailyContexts.forEach((value) => dailyContextStore.put(value));
+  data.caffeineIntakes.forEach((value) => caffeineStore.put(value));
+  data.alcoholIntakes.forEach((value) => alcoholStore.put(value));
+  data.additionalMedicationIntakes.forEach((value) => additionalMedicationStore.put(value));
+  data.analysisAnnotations.forEach((value) => annotationStore.put(value));
+  data.auditEntries.forEach((value) => auditStore.put(value));
+}
+
+function assertUniqueBackupKeys(data: readonly StudyData[]): void {
+  const keyCollections = [
+    data.map(({ study }) => study.id),
+    data.flatMap(({ cognitiveTestConfigurations }) => cognitiveTestConfigurations.map(({ id }) => id)),
+    data.flatMap(({ protocolPhases }) => protocolPhases.map(({ id }) => id)),
+    data.flatMap(({ medicationIntakes }) => medicationIntakes.map(({ id }) => id)),
+    data.flatMap(({ cognitiveMeasurements }) => cognitiveMeasurements.map(({ id }) => id)),
+    data.flatMap(({ pvtSessions }) => pvtSessions.map(({ id }) => id)),
+    data.flatMap(({ associativeMemorySessions }) => associativeMemorySessions.map(({ id }) => id)),
+    data.flatMap(({ catheterizationEvents }) => catheterizationEvents.map(({ id }) => id)),
+    data.flatMap(({ nightObservations }) => nightObservations.map(({ id }) => id)),
+    data.flatMap(({ dailyContexts }) => dailyContexts.map(({ id }) => id)),
+    data.flatMap(({ caffeineIntakes }) => caffeineIntakes.map(({ id }) => id)),
+    data.flatMap(({ alcoholIntakes }) => alcoholIntakes.map(({ id }) => id)),
+    data.flatMap(({ additionalMedicationIntakes }) => additionalMedicationIntakes.map(({ id }) => id)),
+    data.flatMap(({ analysisAnnotations }) => analysisAnnotations.map(({ id }) => id)),
+    data.flatMap(({ auditEntries }) => auditEntries.map(({ id }) => id))
+  ];
+  if (keyCollections.some((keys) => new Set(keys).size !== keys.length)) {
+    throw new Error('A complete backup must not contain duplicate persistence keys');
   }
 }

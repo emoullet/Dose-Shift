@@ -58,6 +58,30 @@ export const protocolPhaseSchema = z.object({
         message: 'A phase must contain at most one schedule entry per medication'
       });
     }
+
+    const expectedFesoterodineWindow = phase.kind === 'B'
+      ? { startsAt: '21:00', endsAt: '22:00' }
+      : { startsAt: '08:30', endsAt: '09:00' };
+    validatePlannedMedication(
+      phase.medicationSchedule.find(({ medication }) => medication === 'fesoterodine'),
+      {
+        doseMg: 8,
+        formulation: 'extended_release',
+        timeWindow: expectedFesoterodineWindow
+      },
+      'fesoterodine',
+      context
+    );
+    validatePlannedMedication(
+      phase.medicationSchedule.find(({ medication }) => medication === 'solifenacin'),
+      {
+        doseMg: 10,
+        formulation: 'standard',
+        timeWindow: { startsAt: '08:30', endsAt: '09:00' }
+      },
+      'solifenacin',
+      context
+    );
   })
   .readonly();
 
@@ -66,3 +90,27 @@ export type MedicationIdentifier = z.infer<typeof medicationIdentifierSchema>;
 export type PlannedTimeWindow = z.infer<typeof plannedTimeWindowSchema>;
 export type PlannedMedication = z.infer<typeof plannedMedicationSchema>;
 export type ProtocolPhase = z.infer<typeof protocolPhaseSchema>;
+
+interface ExpectedPlannedMedication {
+  readonly doseMg: number;
+  readonly formulation: 'extended_release' | 'standard';
+  readonly timeWindow: { readonly startsAt: string; readonly endsAt: string };
+}
+
+function validatePlannedMedication(
+  medication: z.infer<typeof plannedMedicationSchema> | undefined,
+  expected: ExpectedPlannedMedication,
+  identifier: z.infer<typeof medicationIdentifierSchema>,
+  context: z.RefinementCtx
+): void {
+  if (medication === undefined || medication.doseMg !== expected.doseMg ||
+    medication.formulation !== expected.formulation ||
+    medication.timeWindow.startsAt !== expected.timeWindow.startsAt ||
+    medication.timeWindow.endsAt !== expected.timeWindow.endsAt) {
+    context.addIssue({
+      code: 'custom',
+      path: ['medicationSchedule'],
+      message: `The ${identifier} schedule must match the controlled protocol`
+    });
+  }
+}
