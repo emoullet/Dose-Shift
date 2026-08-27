@@ -6,10 +6,15 @@ export const currentDatabaseVersion = 1;
 
 export function migrateDatabase(
   database: IDBPDatabase<DoseShiftDatabase>,
-  oldVersion: number
+  oldVersion: number,
+  newVersion: number | null
 ): void {
-  if (oldVersion < 1) {
-    const studies = database.createObjectStore('studies', { keyPath: 'id' });
-    studies.createIndex('by-created-at', 'createdAt');
+  if (oldVersion < 1 && newVersion !== null && newVersion >= 1) {
+    migrateToVersion1(database);
   }
+}
+
+export function migrateToVersion1(database: IDBPDatabase<DoseShiftDatabase>): void {
+  const studies = database.createObjectStore('studies', { keyPath: 'id' });
+  studies.createIndex('by-created-at', 'createdAt');
 }

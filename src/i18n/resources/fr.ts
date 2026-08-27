@@ -15,7 +15,7 @@ export const fr = {
       offlineTitle: 'Conçue pour une utilisation hors ligne',
       offlineDescription: 'Les fichiers essentiels de l’application sont mis en cache après le premier chargement réussi.',
       privacyTitle: 'Les données restent sur cet appareil',
-      privacyDescription: 'L’application initiale utilise le stockage local du navigateur et ne comporte aucune synchronisation infonuagique.',
+      privacyDescription: 'L’application initiale utilise le stockage local du navigateur et ne comporte aucune synchronisation cloud.',
       safetyNotice: 'Dose-Shift est un outil de suivi personnel. Il ne recommande aucune modification de traitement.'
     },
     data: {

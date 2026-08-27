@@ -4,8 +4,12 @@ import { createEntityId } from '../../src/domain/common/identity';
 import { nowAsInstant, timeZoneSchema } from '../../src/domain/common/time';
 import type { Study } from '../../src/domain/study/study';
 import { IndexedDbStudyRepository } from '../../src/persistence/indexed-db-study-repository';
+import { resetDoseShiftDatabase } from './database-test-utils';
 
 describe('IndexedDbStudyRepository', () => {
+  beforeEach(resetDoseShiftDatabase);
+  afterEach(resetDoseShiftDatabase);
+
   it('persists and retrieves a runtime-validated study', async () => {
     const timestamp = nowAsInstant();
     const study: Study = {
@@ -17,6 +21,7 @@ describe('IndexedDbStudyRepository', () => {
     };
     const repository = new IndexedDbStudyRepository();
 
+    await expect(repository.list()).resolves.toEqual([]);
     await repository.save(study);
 
     await expect(repository.getById(study.id)).resolves.toEqual(study);
