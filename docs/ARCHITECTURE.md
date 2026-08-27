@@ -35,8 +35,24 @@ The codebase should clearly separate:
 - UI components and screens.
 - Import/export serialization.
 - Analysis and derived metrics.
+- Internationalization resources and locale-aware presentation.
 
-The domain layer must not depend on UI components.
+The domain layer must not depend on UI components or localized strings.
+
+### Internationalization
+
+Internationalization is a first-version architectural requirement, not a later retrofit.
+
+- English and French must both be supported from the initial version.
+- User-facing strings must not be hard-coded in React components.
+- Translation keys, source code, identifiers, and engineering-facing content remain in English.
+- French text belongs in localization resources.
+- Locale choice must be persisted locally and must be user-overridable.
+- Browser or device locale may be used only to select an initial default.
+- Locale switching must not alter persisted domain data or protocol semantics.
+- Date, time, and number presentation should be locale-aware while stored values remain locale-neutral and unambiguous.
+
+The exact internationalization library should be selected during scaffolding, with preference for a mature React-compatible solution that supports typed or reliably validated translation resources.
 
 ### Runtime validation
 
@@ -55,6 +71,7 @@ The exact package choices should be confirmed before scaffolding, but the prefer
 - Modern fast build tooling suitable for a PWA.
 - Local browser database abstraction over IndexedDB.
 - Runtime schema validation.
+- Internationalization layer supporting English and French.
 - Unit tests for domain and persistence logic.
 - End-to-end tests for the most important tracking flows once the UI stabilizes.
 
@@ -138,6 +155,7 @@ Time-of-day is central to the study, so time handling must be explicit.
 - Store or associate the study timezone.
 - Preserve local scheduled times separately from actual measurement timestamps when needed.
 - Do not infer protocol phase solely from a formatted local date string.
+- Localize only presentation; persisted timestamps and protocol rules must remain locale-independent.
 
 ## Export strategy
 
