@@ -81,3 +81,39 @@ This includes documentation, source code identifiers, file and directory names, 
 **Decision:** Allow a day to be marked as atypical and optionally excluded from primary analysis while the study continues. Preserve all raw observations from that day.
 
 **Reason:** Illness, infection, travel, sleep disruption, medication deviations, or other confounders should not force study termination. Exclusion is an explicit analysis annotation, not data deletion.
+
+## 2026-08-27 — Revised study question and interpretation boundary
+
+**Decision:** Evaluate whether the within-person temporal cognitive profile changes when fesoterodine timing moves from morning to evening, without assuming that fesoterodine causes the reported cognitive dip. Interpret the study as evidence about short-term temporal association only.
+
+**Reason:** The A1/B/A2 design can identify a repeatable timing-associated pattern, but it cannot establish causality or support conclusions about cumulative brain exposure, chronic cognitive decline, or dementia risk.
+
+## 2026-08-27 — Familiarization and frozen cognitive-test configuration
+
+**Decision:** Preserve familiarization sessions outside the A1/B/A2 analysis and freeze the associative-memory difficulty, stimulus rules, PVT threshold, and administration configuration before A1.
+
+**Reason:** Repeated cognitive testing is vulnerable to practice, floor, ceiling, and configuration effects. Calibrating once before the analyzed phases and retaining the familiarization data makes these effects inspectable without introducing adaptive difficulty as an experimental variable.
+
+## 2026-08-27 — Fixed cognitive battery and aligned self-ratings
+
+**Decision:** Each completed cognitive session follows the order memory encoding → five problem-oriented self-ratings → short PVT → delayed memory recognition. All self-ratings use `0 = no problem` and `10 = maximum problem`; subjective memory may be marked difficult to assess instead of forcing a score.
+
+**Reason:** A fixed order creates the recognition delay, reduces administration variability, and avoids direction errors in repeated subjective measures.
+
+## 2026-08-27 — Trial-level objective cognitive data
+
+**Decision:** Model PVT and associative-memory results as separate sessions and preserve trial-level data when Dose-Shift administers the tests. Delayed associative-memory accuracy is the primary memory outcome; memory response time is secondary.
+
+**Reason:** Trial data allow summary metrics to be recalculated and quality-checked. Accuracy is less directly confounded by the motor component than response time for this memory task.
+
+## 2026-08-27 — Explicit outcomes for planned observations
+
+**Decision:** Represent every planned medication intake and cognitive slot with an explicit observed outcome. Medication statuses are `taken`, `missed`, `partial`, or `uncertain`; cognitive slots are `completed` or explicitly `missed`, with an optional reason.
+
+**Reason:** Absence alone cannot distinguish non-adherence, intentional missingness, technical failure, incomplete synchronization, or an uncreated record. Explicit outcomes preserve analyzable missingness without manufacturing data.
+
+## 2026-08-27 — Time-stamped confounders and auditable corrections
+
+**Decision:** Store caffeine, alcohol, and additional medication as time-stamped events when timing may affect interpretation; capture pain and concomitant-treatment changes in daily context. Preserve meaningful record corrections through audit history.
+
+**Reason:** Cognitive measurements must be interpretable relative to temporally relevant exposures, and later corrections must not erase the original observation silently.

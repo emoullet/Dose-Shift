@@ -37,38 +37,53 @@ The application may select an initial language from the browser/device locale, b
 The user should be able to:
 
 - Define the study start date.
-- See the planned A-B-A phases.
+- See the familiarization period and planned `A1`, `B`, and `A2` phases.
 - Confirm the medication schedule associated with each phase.
 - See protocol precautions before enabling a schedule change.
+- Complete familiarization sessions and freeze cognitive-test difficulty and administration settings before `A1`.
+- See transition days identified explicitly.
 
 The initial implementation may ship with the current three-week protocol as a predefined study template rather than supporting a general protocol builder.
 
-### 2. Complete a scheduled cognitive measurement
+### 2. Record a planned medication intake
+
+For each planned fesoterodine and solifenacin intake, the user should be able to:
+
+- See the planned medication, dose, and time window.
+- Record `taken`, `missed`, `partial`, or `uncertain` status.
+- Record the actual intake time when applicable.
+- Record an actual partial dose and optional note when applicable.
+
+The product must preserve planned and actual timing separately. It must not recommend medication changes or silently resolve schedule deviations.
+
+### 3. Complete a scheduled cognitive measurement
 
 At approximately 10:30, 14:30, and 20:30, the user should be able to record:
 
-- Sleepiness score from 0 to 10.
-- Mental clarity score from 0 to 10.
-- Concentration score from 0 to 10.
-- PVT median reaction time.
-- PVT lapse count, when available.
+- Associative-memory encoding.
+- Sleepiness, mental fog, concentration difficulty, mental fatigue, and memory difficulty scores from 0 to 10, all oriented from no problem to maximum problem.
+- `Difficult to assess / not meaningfully engaged` instead of a forced subjective-memory score.
+- A short PVT with median reaction time and lapse count.
+- Delayed two-choice recognition for the encoded object-value associations.
 
-The UI should minimize taps and make the current scheduled measurement obvious.
+The session must retain its actual start time and follow the protocol order. The UI should minimize taps, make the current slot obvious, and keep device/response conditions stable. A changed device or response method must be recordable as an atypical condition.
 
-### 3. Record a catheterization event
+A planned session may be explicitly marked missed with an optional reason. The product must never generate replacement scores for a missed session.
+
+### 4. Record a catheterization event
 
 At any time, the user should be able to quickly record:
 
 - Timestamp.
 - Catheterized volume.
-- Leakage occurrence.
+- Whether at least one leakage episode occurred since the previous catheterization.
 - Unusual urgency.
 - Atypical bladder sensation.
 - Optional note.
 
 The timestamp should default to the current time but remain editable.
 
-### 4. Record night events
+### 5. Record night events
 
 The user should be able to record:
 
@@ -76,7 +91,7 @@ The user should be able to record:
 - Unusual bladder-related awakening.
 - Optional note and timestamp.
 
-### 5. Record daily confounders
+### 6. Record daily context and confounders
 
 The user should be able to record, at minimum:
 
@@ -84,27 +99,32 @@ The user should be able to record, at minimum:
 - Wake time.
 - Sleep quality.
 - Coffee/tea consumption and timing.
-- Alcohol consumption.
+- Alcohol consumption and timing.
+- Unusual pain or an important change in pain.
 - Unusual physical activity.
 - Large or unusually timed meals.
 - Infection or urinary symptoms.
-- Unusual medication, especially sedating medication.
+- Unusual medication, especially sedating or anticholinergic medication.
+- Meaningful changes in concomitant treatment.
+- `normal`, `atypical`, or `exclude_from_primary_analysis` analysis status with an optional reason.
 
-The first implementation should prefer structured fields where analysis benefits from structure, with optional free-text notes for context.
+The first implementation should prefer structured fields and time-stamped events where analysis benefits from them, with optional free-text notes for context. Excluding a day from primary analysis must preserve all raw data and remain reversible for sensitivity analyses.
 
-### 6. Review progress
+### 7. Review progress
 
 The user should be able to see:
 
 - Current study day and phase.
 - Completed and missing scheduled measurements.
+- Planned and observed medication intake, including deviations.
 - Recent catheterization events.
-- Basic trends in cognitive scores and PVT results.
+- Basic trends in self-ratings, PVT results, and associative-memory accuracy.
 - Basic bladder-control summaries.
+- Atypical, excluded, and transition-day annotations.
 
 Advanced statistical analysis is not required for the first milestone.
 
-### 7. Export and import data
+### 8. Export and import data
 
 The user should be able to:
 
@@ -126,17 +146,28 @@ The protocol requires a short approximately three-minute PVT. Two implementation
 
 The first development milestone should keep the data model compatible with both approaches. A decision on direct PVT implementation should be made separately because methodological rigor may affect implementation complexity.
 
+Regardless of source, the lapse threshold, device, response method, implementation version, and actual timing must remain recordable. If Dose-Shift later administers the PVT, it should preserve trial-level reaction times.
+
+## Associative memory scope
+
+The protocol requires a brief object-value associative-memory task with delayed two-choice recognition. Familiarization should select a non-floor/non-ceiling difficulty before `A1`; configuration then remains frozen through `A1`, `B`, and `A2`.
+
+The domain model and exports must preserve the frozen configuration, generator version, stimuli, answer order, selected responses, correctness, presentation order, and response times. Accuracy is the primary memory outcome. Implementing the actual task UI and stimulus generator may be delivered separately from the initial domain-schema work.
+
 ## Analysis targets
 
 The application should preserve enough raw data to support at least:
 
-- Concentration at 14:30 by protocol phase.
-- Mental clarity at 14:30 by protocol phase.
-- Difference between 14:30 and 20:30 measurements.
+- The five self-ratings at 14:30 by protocol phase.
+- Within-day differences between measurement slots.
 - Median PVT reaction time by time of day and phase.
 - PVT lapse count by time of day and phase.
+- Delayed associative-memory accuracy by time of day and phase.
 - Catheterized volumes and leakage frequency by phase and time of day.
 - Comparison of A1, B, and A2 phases.
+- Elapsed time from the latest observed intake of each medication to each cognitive session.
+- Sensitivity analyses including and excluding flagged days, sessions, and transition days.
+- Potential practice effects across familiarization and study sessions.
 
 Derived values should not replace raw observations in storage.
 
@@ -149,3 +180,4 @@ Derived values should not replace raw observations in storage.
 - Cloud synchronization.
 - Medical-device certification claims.
 - Automated interpretation presented as medical advice.
+- Claims about cumulative brain exposure, chronic cognitive decline, or dementia risk.
