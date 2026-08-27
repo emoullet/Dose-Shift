@@ -39,3 +39,27 @@ This includes documentation, source code identifiers, file and directory names, 
 **Decision:** English and French are both supported as first-class user-interface languages from the initial version. User-facing text must be routed through an internationalization layer, while source code, identifiers, documentation, and translation keys remain in English.
 
 **Reason:** The application must be usable in both languages without requiring a later internationalization retrofit. Locale selection should affect presentation only and must not alter stored study data or protocol semantics.
+
+## 2026-08-27 — Foundation technology stack
+
+**Decision:** Use React, strict TypeScript, Vite, React Router, `vite-plugin-pwa`, `idb`, Zod, i18next/react-i18next, Vitest, Testing Library, and ESLint. Use pnpm for reproducible dependency management.
+
+**Reason:** These packages provide a small, conventional foundation for a responsive local-first PWA while keeping domain code independent of React and browser persistence details.
+
+## 2026-08-27 — Persistence and validation boundaries
+
+**Decision:** Access IndexedDB only through persistence adapters, keep explicit numbered database migrations, and validate records with Zod when reading and before writing. Define versioned serialization envelopes separately from database records.
+
+**Reason:** Browser data is an untrusted runtime boundary. Central adapters and explicit migrations support safe schema evolution without coupling application use cases to IndexedDB.
+
+## 2026-08-27 — Minimal foundation domain primitives
+
+**Decision:** The foundation defines branded UUID identifiers, offset-aware ISO 8601 instants, validated IANA timezone names, and minimal study metadata. It does not encode protocol phases, medication schedules, measurement records, or clinical interpretation.
+
+**Reason:** These primitives establish safe patterns for identity and time handling without prematurely committing to the complete study schema or altering the controlled protocol.
+
+## 2026-08-27 — Interface language persistence
+
+**Decision:** Store the explicit English/French interface preference in namespaced localStorage while storing study-domain records in IndexedDB.
+
+**Reason:** Language is a small device-level presentation preference, not study data. Keeping it separate ensures locale switching cannot mutate domain semantics.
