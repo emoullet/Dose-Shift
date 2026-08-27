@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented foundation. Detailed study data modeling and feature workflows remain intentionally open.
+Implemented foundation, validated study domain model, local persistence, and complete JSON backup envelope. Feature workflows remain intentionally open.
 
 ## Product shape
 
@@ -95,75 +95,15 @@ Production builds generate a web app manifest and a service worker that precache
 
 No backend is required for the first milestone.
 
-## Future data model outline
+## Implemented study data model
 
-The outline below remains a planning aid rather than an implemented schema. The foundation intentionally implements only branded UUID identifiers, offset-aware ISO instants, validated IANA timezones, and minimal study metadata.
+`docs/DOMAIN_MODEL.md` defines the implemented study entities. Each trust boundary uses a strict Zod schema and its inferred TypeScript type. Conditional observation states use discriminated unions so that, for example, a missed cognitive slot cannot contain synthetic scores and a missed medication intake cannot contain an actual intake timestamp.
 
-Likely top-level concepts include:
+`StudyData` is the domain aggregate used for complete persistence and serialization. It contains one study plus its phase snapshot, frozen cognitive-test configuration, observations, raw objective-test sessions and trials, confounders, analysis annotations, and audit entries. It validates that every enclosed entity belongs to the same study.
 
-### Study
+PVT and associative-memory trials are embedded in their parent session records. This preserves ordered raw test data atomically with the summaries from which analysis may recalculate metrics; it does not couple the domain to a test-administration UI.
 
-- Identifier.
-- Protocol version.
-- Start date.
-- Timezone.
-- Study status.
-
-### ProtocolPhase
-
-- Identifier.
-- Phase type (`A1`, `B`, `A2` or equivalent explicit representation).
-- Start/end dates.
-- Medication schedule metadata.
-
-### CognitiveMeasurement
-
-- Identifier.
-- Study identifier.
-- Scheduled slot.
-- Actual timestamp.
-- Sleepiness score.
-- Mental clarity score.
-- Concentration score.
-- PVT median reaction time.
-- PVT lapse count when available.
-- Optional notes.
-- Creation/update metadata.
-
-### CatheterizationEvent
-
-- Identifier.
-- Timestamp.
-- Volume.
-- Leakage flag.
-- Unusual urgency flag.
-- Atypical bladder sensation flag.
-- Optional notes.
-- Creation/update metadata.
-
-### NightEvent
-
-- Identifier.
-- Timestamp or associated night/date.
-- Leakage flag.
-- Bladder-related awakening flag.
-- Optional notes.
-
-### DailyContext
-
-- Date.
-- Bedtime.
-- Wake time.
-- Sleep quality.
-- Caffeine events or summary.
-- Alcohol information.
-- Unusual physical activity.
-- Meal-related confounders.
-- Infection/urinary symptoms.
-- Unusual medications.
-- Optional notes.
-
-The detailed schema should be designed before implementation and documented separately if it becomes complex.
+IndexedDB version 2 stores each top-level entity type separately and indexes study-scoped records by study identifier. The study-data adapter validates on both reads and writes and upserts one study dataset in a single transaction without deleting omitted records. Database version 1 remains an explicit migration step, and the version-2 migration adds the complete stores while upgrading foundation-era study records.
 
 ## Time handling
 
@@ -179,7 +119,7 @@ Time-of-day is central to the study, so time handling must be explicit.
 
 ### JSON
 
-Canonical complete backup/export format.
+Canonical complete backup/export format. Export format version 2 serializes one or more validated `StudyData` aggregates in a strict envelope containing the producing application version and export timestamp. Unsupported versions and malformed JSON fail validation without writing to persistence.
 
 The export should include:
 

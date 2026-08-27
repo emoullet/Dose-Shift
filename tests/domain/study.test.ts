@@ -10,7 +10,9 @@ describe('studySchema', () => {
     const result = studySchema.safeParse({
       id: createEntityId(),
       protocolVersion: '1.0',
+      startDate: '2026-08-27',
       timeZone: 'Europe/Paris',
+      status: 'draft',
       createdAt: timestamp,
       updatedAt: timestamp
     });
@@ -22,11 +24,38 @@ describe('studySchema', () => {
     const result = studySchema.safeParse({
       id: createEntityId(),
       protocolVersion: '1.0',
+      startDate: '2026-08-27',
       timeZone: 'Not/A-Time-Zone',
+      status: 'draft',
       createdAt: '2026-08-27 10:00',
       updatedAt: '2026-08-27 10:00'
     });
 
     expect(result.success).toBe(false);
+  });
+
+  it('requires stop metadata only when the study is stopped', () => {
+    const timestamp = nowAsInstant();
+    const baseStudy = {
+      id: createEntityId(),
+      protocolVersion: '1.0',
+      startDate: '2026-08-27',
+      timeZone: 'Europe/Paris',
+      createdAt: timestamp,
+      updatedAt: timestamp
+    };
+
+    expect(studySchema.safeParse({ ...baseStudy, status: 'stopped' }).success).toBe(false);
+    expect(studySchema.safeParse({
+      ...baseStudy,
+      status: 'active',
+      stoppedAt: timestamp
+    }).success).toBe(false);
+    expect(studySchema.safeParse({
+      ...baseStudy,
+      status: 'stopped',
+      stoppedAt: timestamp,
+      stopReason: 'Stopped without altering the protocol'
+    }).success).toBe(true);
   });
 });

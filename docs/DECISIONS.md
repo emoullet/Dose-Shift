@@ -117,3 +117,9 @@ This includes documentation, source code identifiers, file and directory names, 
 **Decision:** Store caffeine, alcohol, and additional medication as time-stamped events when timing may affect interpretation; capture pain and concomitant-treatment changes in daily context. Preserve meaningful record corrections through audit history.
 
 **Reason:** Cognitive measurements must be interpretable relative to temporally relevant exposures, and later corrections must not erase the original observation silently.
+
+## 2026-08-27 — Study aggregate, persistence version 2, and export version 2
+
+**Decision:** Represent a complete backup unit as one validated `StudyData` aggregate containing a study and all of its study-scoped records. Store top-level entity types in separate IndexedDB version-2 object stores, while embedding ordered PVT and associative-memory trials in their parent sessions. Serialize complete backups with export format version 2, independently of the database version.
+
+**Reason:** The aggregate enforces study ownership at persistence and import boundaries. Separate top-level stores support focused offline access, while embedded trials keep raw test observations atomic with their session summaries. Independent database and export versions preserve the documented versioning boundaries and allow each contract to evolve explicitly.
