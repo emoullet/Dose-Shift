@@ -6,7 +6,25 @@ The first target is a responsive web application / PWA that supports structured 
 
 ## Project status
 
-Early design and prototyping.
+Initial application foundation. Feature-level study workflows are not implemented yet.
+
+## Development
+
+Requirements: Node.js 24 and pnpm 11.
+
+```sh
+pnpm install
+pnpm dev
+```
+
+Quality commands:
+
+```sh
+pnpm lint
+pnpm type-check
+pnpm test
+pnpm build
+```
 
 ## Goals
 
@@ -20,6 +38,14 @@ Early design and prototyping.
 ## Repository structure
 
 - `AGENTS.md` — repository-wide instructions for Codex and other coding agents.
+- `src/domain/` — locale- and UI-independent domain models and validation schemas.
+- `src/application/` — use cases and ports.
+- `src/persistence/` — IndexedDB schema, migrations, and adapters.
+- `src/serialization/` — versioned import/export validation boundaries.
+- `src/analysis/` — derived-metric contracts and future analysis logic.
+- `src/ui/` — React components and screens.
+- `src/i18n/` — internationalization setup and translation resources.
+- `tests/` — unit and integration tests.
 - `docs/PROTOCOL.md` — versioned description of the current experimental protocol.
 - `docs/PRODUCT_SPEC.md` — product requirements and intended user flows.
 - `docs/ARCHITECTURE.md` — initial technical architecture and engineering constraints.

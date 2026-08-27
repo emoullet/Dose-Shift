@@ -2,7 +2,7 @@
 
 ## Status
 
-Initial architecture direction. Technical choices may evolve during prototyping.
+Implemented foundation. Detailed study data modeling and feature workflows remain intentionally open.
 
 ## Product shape
 
@@ -62,24 +62,42 @@ Static typing is not sufficient for persisted or imported data. All external or 
 
 Exports should include a schema version. Data migrations should be explicit and tested.
 
-## Proposed stack direction
+## Foundation stack
 
-The exact package choices should be confirmed before scaffolding, but the preferred direction is:
+- React and React Router for the application shell and client-side routing.
+- TypeScript with strict mode and additional unchecked-index and optional-property checks.
+- Vite and `vite-plugin-pwa` for development, production builds, the web app manifest, and a generated Workbox service worker.
+- IndexedDB through the small `idb` wrapper. Database access is confined to persistence adapters.
+- Zod schemas at persisted and serialized trust boundaries.
+- i18next and react-i18next with English and French resources.
+- Vitest, Testing Library, jsdom, and fake-indexeddb for domain, UI, and persistence tests.
+- ESLint with TypeScript and React Hooks rules.
 
-- TypeScript with strict compiler settings.
-- React-based web UI.
-- Modern fast build tooling suitable for a PWA.
-- Local browser database abstraction over IndexedDB.
-- Runtime schema validation.
-- Internationalization layer supporting English and French.
-- Unit tests for domain and persistence logic.
-- End-to-end tests for the most important tracking flows once the UI stabilizes.
+The repository uses pnpm and records the resolved dependency graph in `pnpm-lock.yaml`.
+
+## Source boundaries
+
+Dependencies point inward toward the domain:
+
+- `domain` contains language-independent value and entity schemas and has no React dependency.
+- `application` declares use cases and persistence ports in domain terms.
+- `persistence` owns the IndexedDB schema, explicit version migrations, and repository adapters. Values are validated when read and before write.
+- `serialization` owns versioned external data envelopes and validation. It does not yet provide complete import/export workflows.
+- `analysis` is reserved for pure derived metrics that do not replace raw observations.
+- `ui` contains React screens and components; it accesses user-facing text through `i18n`.
+- `app` composes routes and UI. Future composition should inject concrete adapters into application use cases here.
+
+Interface language is a presentation setting persisted in localStorage under a namespaced key. Domain and study data use IndexedDB and do not contain localized values.
+
+## PWA and offline behavior
+
+Production builds generate a web app manifest and a service worker that precaches the compiled application shell. Client-side navigation falls back to `index.html`, so previously cached shell routes remain available offline after a successful initial production load. Development mode does not enable the service worker to avoid stale-cache confusion.
 
 No backend is required for the first milestone.
 
-## Data model outline
+## Future data model outline
 
-The model should distinguish immutable identity from editable content and should preserve original timestamps.
+The outline below remains a planning aid rather than an implemented schema. The foundation intentionally implements only branded UUID identifiers, offset-aware ISO instants, validated IANA timezones, and minimal study metadata.
 
 Likely top-level concepts include:
 
