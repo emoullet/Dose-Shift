@@ -63,3 +63,21 @@ This includes documentation, source code identifiers, file and directory names, 
 **Decision:** Store the explicit English/French interface preference in namespaced localStorage while storing study-domain records in IndexedDB.
 
 **Reason:** Language is a small device-level presentation preference, not study data. Keeping it separate ensures locale switching cannot mutate domain semantics.
+
+## 2026-08-27 — Record actual medication intake times
+
+**Decision:** Record the actual daily intake time of both fesoterodine and solifenacin separately from the planned protocol schedule.
+
+**Reason:** Actual dosing time may affect interpretation of cognitive and bladder measurements. Planned timing and observed timing must remain distinguishable.
+
+## 2026-08-27 — Catheterization leakage semantics
+
+**Decision:** The leakage field associated with a catheterization means that at least one leakage episode occurred since the previous catheterization. It does not mean leakage occurred specifically during catheterization.
+
+**Reason:** This matches the intended observation and prevents an ambiguous event definition that would weaken later analysis.
+
+## 2026-08-27 — Atypical days remain in the study
+
+**Decision:** Allow a day to be marked as atypical and optionally excluded from primary analysis while the study continues. Preserve all raw observations from that day.
+
+**Reason:** Illness, infection, travel, sleep disruption, medication deviations, or other confounders should not force study termination. Exclusion is an explicit analysis annotation, not data deletion.
