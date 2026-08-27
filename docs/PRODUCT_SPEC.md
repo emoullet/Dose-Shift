@@ -16,6 +16,19 @@ The initial product is intended for a single user and should work well on both A
 - Explicit export/import for backup and analysis.
 - Fast entry for repeated measurements.
 - Clear separation between protocol configuration, raw observations, and derived analyses.
+- User-facing content must be available in both English and French.
+- The user must be able to switch the interface language from within the application.
+- The selected language should persist locally across sessions.
+
+## Internationalization
+
+English and French are first-class product languages from the initial version.
+
+All user-facing strings, including navigation, labels, buttons, validation messages, protocol explanations, warnings, notifications, settings, empty states, and analysis labels, must use the application's internationalization layer rather than being hard-coded in UI components.
+
+The source code, identifiers, file names, documentation, translation keys, and engineering terminology remain in English. French text should live only in localization resources or other explicitly localized content.
+
+The application may select an initial language from the browser/device locale, but the user must always be able to override it explicitly. Changing the interface language must not modify stored study data or protocol semantics.
 
 ## Core user flows
 

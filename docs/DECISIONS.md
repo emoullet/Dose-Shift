@@ -33,3 +33,9 @@ This includes documentation, source code identifiers, file and directory names, 
 **Decision:** The data model must support both externally generated PVT results and a future integrated PVT, but direct PVT implementation is not yet committed.
 
 **Reason:** Integrating a PVT may improve usability, but methodological rigor around browser/device timing must be evaluated before using an in-app test as a study instrument.
+
+## 2026-08-27 — Bilingual user interface
+
+**Decision:** English and French are both supported as first-class user-interface languages from the initial version. User-facing text must be routed through an internationalization layer, while source code, identifiers, documentation, and translation keys remain in English.
+
+**Reason:** The application must be usable in both languages without requiring a later internationalization retrofit. Locale selection should affect presentation only and must not alter stored study data or protocol semantics.
