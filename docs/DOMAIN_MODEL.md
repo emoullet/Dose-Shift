@@ -257,6 +257,8 @@ Suggested fields:
 
 Marking a day atypical does not stop the study. Excluding it from the primary analysis is an explicit, reversible annotation. All raw data remain preserved and available for sensitivity analyses; analysis code must never exclude a day silently.
 
+`DailyContext.analysis` is the single authoritative day-level analysis state. Generic `AnalysisAnnotation` records must not target a day, because a second active representation could contradict the daily context.
+
 ## Time-stamped confounder events
 
 Factors whose timing may affect a cognitive session should be events rather than only daily text.
@@ -292,9 +294,9 @@ Factors whose timing may affect a cognitive session should be events rather than
 
 Regular concomitant medications and meaningful treatment changes should remain representable even when they are not isolated one-off doses.
 
-## Session and day analysis annotations
+## Session and transition analysis annotations
 
-In addition to the daily analysis flag, a cognitive session may need an explicit atypical annotation for device changes, interruptions, unusual administration conditions, or technical issues. An annotation includes a reason and never removes the underlying record.
+In addition to the authoritative daily analysis flag, a cognitive session may need an explicit atypical annotation for device changes, interruptions, unusual administration conditions, or technical issues. An annotation includes a reason and never removes the underlying record.
 
 Transition days are also explicit analysis context. They are not automatically discarded.
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { createEntityId } from '../../src/domain/common/identity';
-import { nowAsInstant, timeZoneSchema } from '../../src/domain/common/time';
+import { localDateSchema, nowAsInstant, timeZoneSchema } from '../../src/domain/common/time';
 import type { Study } from '../../src/domain/study/study';
 import { IndexedDbStudyRepository } from '../../src/persistence/indexed-db-study-repository';
 import { resetDoseShiftDatabase } from './database-test-utils';
@@ -15,7 +15,9 @@ describe('IndexedDbStudyRepository', () => {
     const study: Study = {
       id: createEntityId(),
       protocolVersion: '1.0',
+      startDate: localDateSchema.parse('2026-08-27'),
       timeZone: timeZoneSchema.parse('Europe/Paris'),
+      status: 'draft',
       createdAt: timestamp,
       updatedAt: timestamp
     };
