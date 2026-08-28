@@ -20,6 +20,8 @@ The application must support data collection and analysis without autonomously r
 - Do not silently change medication doses, schedules, protocol phases, thresholds, or clinical interpretations.
 - Treat `docs/PROTOCOL.md` as a controlled product requirement. Any behavior that would alter the protocol must be explicitly requested.
 - Preserve warnings and stop conditions from the protocol in relevant UX flows.
+- Do not infer, substitute for, or claim the clinician or pharmacist validation required by the protocol.
+- Any scientific, medication, dosing, timing, scoring, threshold, exclusion, interpretation, warning, stop-condition, or clinical-safety decision requires separate explicit human approval before implementation. General scope approval is not sufficient for these decisions.
 
 ## Engineering principles
 
@@ -48,13 +50,49 @@ The application must support data collection and analysis without autonomously r
 - Run relevant tests before considering a task complete.
 - Do not weaken tests merely to make a change pass.
 
+## Supervised delivery model
+
+- Organize implementation as focused delivery lots recorded in `docs/ROADMAP.md`.
+- Do not implement a proposed lot until a human explicitly approves its roadmap scope.
+- Use at most two delegation levels: orchestrator -> lot lead -> focused reviewers. Reviewers must not spawn agents.
+- Keep no more than three spawned agents active across a practical workflow. Because the configured limit is per session rather than tree-wide, a spawned lot lead may run at most two reviewers concurrently and must run the third reviewer after a slot is free.
+- Assign exactly one implementation writer to each lot. That writer exclusively owns the lot's branch, worktree, commits, and draft pull request.
+- Do not allow parallel writer agents to edit the same branch or worktree. The lot lead must not delegate implementation to another writer.
+- Use the project-scoped agent roles in `.codex/agents/`. Reviewers are read-only and report findings to the lot lead; they do not apply fixes.
+- Use the three focused review specialties when relevant: domain and protocol invariants; persistence, data integrity, and tests; UI, internationalization, and accessibility.
+- The coordinating agent must inspect the actual final diff and raw verification evidence. Agent summaries alone are not proof that a gate passed.
+- Client enforcement limitations and the complete lifecycle are documented in `docs/DELIVERY_WORKFLOW.md`.
+
 ## Git workflow
 
-- Work on focused feature branches.
+- Use one isolated worktree, one focused branch, and one draft pull request per implementation lot.
 - Keep commits small and coherent.
-- Do not rewrite shared history unless explicitly requested.
+- Do not perform destructive Git operations, including force pushes, history rewrites, destructive resets, or discarding uncommitted work.
 - Do not include unrelated changes in a commit.
+- Agents may prepare, review, correct, commit, push, and open or update a draft pull request within the approved lot.
+- Never enable automatic merge or merge a pull request. A merge requires a new explicit user instruction after final verification and acceptance evidence are available.
+
+## Verification and acceptance
+
+Before a lot is ready for human acceptance:
+
+- Run relevant focused tests while developing, then run `pnpm test`.
+- Run `pnpm type-check`.
+- Run `pnpm lint`.
+- Run `pnpm build` as the production build gate.
+- Run `git diff --check` and inspect the complete diff against the lot's base branch.
+- Check consistency across `AGENTS.md`, the roadmap, the delivery workflow, the decision log, and any affected product, architecture, domain, or protocol documentation.
+- Record understandable functional acceptance evidence: scenarios exercised, visible results or screenshots when applicable, data or migration impact, known limitations, and a safety-impact statement.
+- Report failed or unavailable checks as blocking evidence; never describe them as passing.
+
+## Non-destructive data handling
+
+- Do not delete, replace, rewrite, or migrate recorded user data destructively.
+- Preserve raw observations, audit history, explicit missingness, and reversible analysis exclusions.
+- Stop and request human direction if a requested change cannot be delivered without destructive data or Git operations.
 
 ## Documentation
 
 When introducing a meaningful architectural, product, or data-model decision, update `docs/DECISIONS.md` and any affected specification document.
+
+Delivery governance changes must also keep `docs/DELIVERY_WORKFLOW.md`, `docs/ROADMAP.md`, and the pull request template consistent.

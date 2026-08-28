@@ -129,3 +129,11 @@ This includes documentation, source code identifiers, file and directory names, 
 **Decision:** Validate cross-record medication, phase, cognitive-slot, raw-PVT, and frozen-configuration invariants at the `StudyData` boundary. Keep `DailyContext.analysis` as the only day-level analysis state. Expose normal append-preserving saves separately from an explicitly named exact backup restoration operation.
 
 **Reason:** Individually valid records can still contradict the frozen protocol or each other. One authoritative day flag prevents competing exclusion state, while distinct save and restore semantics prevent both accidental observation deletion during routine writes and accidental retention of stale records during complete backup restoration.
+
+## 2026-08-28 — Supervised agent delivery governance
+
+**Decision:** Deliver implementation as human-approved, focused roadmap lots. Each lot uses one isolated worktree, one branch, one sole implementation writer, read-only specialist reviews, and one draft pull request. Required quality, diff, documentation, and functional-acceptance evidence must be inspected directly before a separate explicit merge authorization. Agents never merge automatically.
+
+Project-scoped Codex configuration caps spawned threads at three per session and defines an inheriting lot-lead profile plus read-only domain, persistence/data-integrity/test, and UI/internationalization/accessibility reviewer profiles. The practical hierarchy stops at orchestrator -> lot lead -> reviewer. A rolling review schedule keeps the practical tree-wide spawned-agent count at three even though the client limit is per session.
+
+**Reason:** Dose-Shift combines sensitive longitudinal data with a controlled medication-timing protocol. Exclusive write ownership, evidence-based review, explicit scientific and safety approvals, and human merge control reduce coordination errors and prevent product or protocol decisions from being introduced silently. Repository instructions document client and hosting limitations rather than claiming controls that the configuration cannot enforce.

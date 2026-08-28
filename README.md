@@ -50,6 +50,9 @@ pnpm build
 - `docs/PRODUCT_SPEC.md` — product requirements and intended user flows.
 - `docs/ARCHITECTURE.md` — initial technical architecture and engineering constraints.
 - `docs/DECISIONS.md` — lightweight architectural and product decision log.
+- `docs/DELIVERY_WORKFLOW.md` — supervised lot ownership, review, verification, approval, and merge controls.
+- `docs/ROADMAP.md` — approved, active, proposed, and completed delivery lots.
+- `.codex/` — project-scoped Codex concurrency and specialist agent profiles.
 
 ## Important
 
