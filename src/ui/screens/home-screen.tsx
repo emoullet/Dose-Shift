@@ -11,6 +11,7 @@ import {
   CreateDraftStudy
 } from '../../application/studies/create-draft-study';
 import { LoadContinuingStudy } from '../../application/studies/load-continuing-study';
+import { UpdateDraftStudy } from '../../application/studies/update-draft-study';
 import { calendarDaysBetween } from '../../domain/common/calendar';
 import {
   localDateForInstant,
@@ -24,7 +25,7 @@ import type { StudyData } from '../../domain/study/study-data';
 type WorkspaceState =
   | { readonly kind: 'loading' }
   | { readonly kind: 'empty' }
-  | { readonly kind: 'study'; readonly data: StudyData; readonly message: 'resumed' | 'saved' | 'conflict' }
+  | { readonly kind: 'study'; readonly data: StudyData; readonly message: 'resumed' | 'saved' | 'updated' | 'conflict' }
   | { readonly kind: 'loadError' };
 
 interface FormErrors {
@@ -87,17 +88,45 @@ export function HomeScreen({ dependencies }: { dependencies: AppDependencies }) 
       {workspace.kind === 'empty' && showForm && (
         <DraftStudyForm
           dependencies={dependencies}
-          onSaved={(data) => setWorkspace({ kind: 'study', data, message: 'saved' })}
-          onConflict={(data) => setWorkspace({ kind: 'study', data, message: 'conflict' })}
+          onSaved={(data) => {
+            setWorkspace({ kind: 'study', data, message: 'saved' });
+            setShowForm(false);
+          }}
+          onConflict={(data) => {
+            setWorkspace({ kind: 'study', data, message: 'conflict' });
+            setShowForm(false);
+          }}
         />
       )}
       {workspace.kind === 'study' && (
-        <>
-          <p className="success-message" role="status">
-            {t(`studySetup.${workspace.message}`)}
-          </p>
-          <StudyPlan data={workspace.data} />
-        </>
+        showForm ? (
+          <DraftStudyForm
+            dependencies={dependencies}
+            initialData={workspace.data}
+            onSaved={(data) => {
+              setWorkspace({ kind: 'study', data, message: 'updated' });
+              setShowForm(false);
+            }}
+            onConflict={(data) => {
+              setWorkspace({ kind: 'study', data, message: 'conflict' });
+              setShowForm(false);
+            }}
+            onCancel={() => setShowForm(false)}
+          />
+        ) : (
+          <>
+            <p className="success-message" role="status">
+              {t(`studySetup.${workspace.message}`)}
+            </p>
+            <StudyPlan
+              data={workspace.data}
+              onEdit={workspace.data.study.status === 'draft' &&
+                workspace.data.study.protocolVersion === '1.1'
+                ? () => setShowForm(true)
+                : undefined}
+            />
+          </>
+        )
       )}
     </section>
   );
@@ -105,18 +134,26 @@ export function HomeScreen({ dependencies }: { dependencies: AppDependencies }) 
 
 function DraftStudyForm({
   dependencies,
+  initialData,
   onSaved,
-  onConflict
+  onConflict,
+  onCancel
 }: {
   readonly dependencies: AppDependencies;
+  readonly initialData?: StudyData;
   readonly onSaved: (data: StudyData) => void;
   readonly onConflict: (data: StudyData) => void;
+  readonly onCancel?: () => void;
 }) {
   const { t } = useTranslation();
+  const editing = initialData !== undefined;
   const detectedTimeZone = getDetectedTimeZone();
-  const [startDate, setStartDate] = useState(() => getInitialStartDate(detectedTimeZone));
-  const [timeZone, setTimeZone] = useState(detectedTimeZone);
-  const [duration, setDuration] = useState(String(defaultPhaseDurationDays));
+  const [startDate, setStartDate] = useState(() =>
+    initialData?.study.startDate ?? getInitialStartDate(detectedTimeZone));
+  const [timeZone, setTimeZone] = useState(initialData?.study.timeZone ?? detectedTimeZone);
+  const [duration, setDuration] = useState(() => String(
+    initialData === undefined ? defaultPhaseDurationDays : getPhaseDuration(initialData)
+  ));
   const [timeZoneConfirmed, setTimeZoneConfirmed] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [submission, setSubmission] = useState<'idle' | 'saving' | 'failed'>('idle');
@@ -157,15 +194,18 @@ function DraftStudyForm({
 
     setSubmission('saving');
     try {
-      const creator = new CreateDraftStudy(
-        dependencies.studyRepository,
-        dependencies.studyDataRepository
-      );
-      const data = await creator.execute({
+      const input = {
         a1StartDate: parsedDate.data,
         timeZone: parsedTimeZone.data,
         phaseDurationDays
-      });
+      };
+      const data = initialData === undefined
+        ? await new CreateDraftStudy(
+          dependencies.studyRepository,
+          dependencies.studyDataRepository
+        ).execute(input)
+        : await new UpdateDraftStudy(dependencies.studyDataRepository)
+          .execute(initialData.study.id, input);
       onSaved(data);
     } catch (error) {
       if (error instanceof ContinuingStudyConflictError) {
@@ -190,7 +230,9 @@ function DraftStudyForm({
   return (
     <section className="setup-layout" aria-labelledby="study-setup-heading">
       <div className="info-card">
-        <h2 id="study-setup-heading">{t('studySetup.formTitle')}</h2>
+        <h2 id="study-setup-heading">
+          {t(editing ? 'studySetup.editFormTitle' : 'studySetup.formTitle')}
+        </h2>
         {(Object.keys(errors).length > 0 || submission === 'failed') && (
           <div className="error-message" role="alert" tabIndex={-1} ref={errorSummaryRef}>
             {submission === 'failed'
@@ -270,9 +312,18 @@ function DraftStudyForm({
             )}
           </fieldset>
 
-          <button className="primary-button" type="submit" disabled={submission === 'saving'}>
-            {submission === 'saving' ? t('studySetup.saving') : t('studySetup.saveDraft')}
-          </button>
+          <div className="form-actions">
+            <button className="primary-button" type="submit" disabled={submission === 'saving'}>
+              {submission === 'saving'
+                ? t('studySetup.saving')
+                : t(editing ? 'studySetup.saveChanges' : 'studySetup.saveDraft')}
+            </button>
+            {onCancel !== undefined && (
+              <button className="secondary-button" type="button" onClick={onCancel}>
+                {t('studySetup.cancelEdit')}
+              </button>
+            )}
+          </div>
         </form>
       </div>
 
@@ -281,7 +332,15 @@ function DraftStudyForm({
   );
 }
 
-function StudyPlan({ data, preview = false }: { readonly data: StudyData; readonly preview?: boolean }) {
+function StudyPlan({
+  data,
+  preview = false,
+  onEdit
+}: {
+  readonly data: StudyData;
+  readonly preview?: boolean;
+  readonly onEdit?: (() => void) | undefined;
+}) {
   const { i18n, t } = useTranslation();
   const locale = i18n.resolvedLanguage === 'fr' ? 'fr-FR' : 'en-GB';
   const orderedPhases = [...data.protocolPhases].sort((left, right) =>
@@ -299,6 +358,11 @@ function StudyPlan({ data, preview = false }: { readonly data: StudyData; readon
           </h2>
           <span className="status-badge">{t(`studySetup.status.${data.study.status}`)}</span>
         </div>
+        {onEdit !== undefined && (
+          <button className="secondary-button edit-plan-button" type="button" onClick={onEdit}>
+            {t('studySetup.editDraft')}
+          </button>
+        )}
         <p>{t('studySetup.protocolVersion', { version: data.study.protocolVersion })}</p>
         <p className="time-zone-value">{t('studySetup.savedTimeZone', { timeZone: data.study.timeZone })}</p>
         {duration !== 7 && (
@@ -369,6 +433,13 @@ function getInitialStartDate(timeZone: string): string {
   return parsedTimeZone.success
     ? localDateForInstant(nowAsInstant(), parsedTimeZone.data)
     : '';
+}
+
+function getPhaseDuration(data: StudyData): number {
+  const a1 = data.protocolPhases.find(({ kind }) => kind === 'A1');
+  return a1 === undefined
+    ? defaultPhaseDurationDays
+    : calendarDaysBetween(a1.startDate, a1.endDate) + 1;
 }
 
 function formatLocalDate(localDate: LocalDate, locale: string): string {

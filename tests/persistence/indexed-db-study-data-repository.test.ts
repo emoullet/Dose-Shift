@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { createEntityId, entityIdSchema } from '../../src/domain/common/identity';
 import { buildDraftStudyData } from '../../src/application/studies/build-draft-study-data';
+import { updateDraftStudyData } from '../../src/application/studies/update-draft-study';
 import { instantSchema, localDateSchema, timeZoneSchema } from '../../src/domain/common/time';
 import { studyDataSchema } from '../../src/domain/study/study-data';
 import { IndexedDbStudyDataRepository } from '../../src/persistence/indexed-db-study-data-repository';
@@ -115,6 +116,32 @@ describe('IndexedDbStudyDataRepository', () => {
     expect(reloaded!.medicationIntakes).toEqual([]);
     expect(reloaded!.cognitiveMeasurements).toEqual([]);
     await expect(repository.getByStudyId(completed.study.id)).resolves.toBeDefined();
+  });
+
+  it('updates a draft plan without creating stale phases or another continuing study', async () => {
+    const repository = new IndexedDbStudyDataRepository();
+    const draft = createDraft('2026-10-01', 7);
+    await repository.createDraftIfNoContinuingStudy(draft);
+
+    const updated = updateDraftStudyData(draft, {
+      a1StartDate: localDateSchema.parse('2026-11-15'),
+      timeZone: timeZoneSchema.parse('America/Toronto'),
+      phaseDurationDays: 20
+    });
+    await repository.save(updated);
+
+    const reloaded = await repository.getByStudyId(draft.study.id);
+    expect(reloaded!.study.id).toBe(draft.study.id);
+    expect(reloaded!.study.startDate).toBe('2026-11-15');
+    expect(reloaded!.study.timeZone).toBe('America/Toronto');
+    expect(reloaded!.protocolPhases).toHaveLength(3);
+    expect(reloaded!.protocolPhases.map(({ id }) => id))
+      .toEqual(expect.arrayContaining(draft.protocolPhases.map(({ id }) => id)));
+    expect(reloaded!.protocolPhases.flatMap(({ medicationSchedule }) => medicationSchedule))
+      .toHaveLength(6);
+    const continuing = (await new IndexedDbStudyRepository().list())
+      .filter(({ status }) => status === 'draft' || status === 'active');
+    expect(continuing).toHaveLength(1);
   });
 
   it('allows exactly one draft under concurrent creation attempts', async () => {

@@ -111,6 +111,8 @@ The draft-study application builder creates a complete protocol-1.1 `StudyData` 
 
 Draft creation uses a creation-only `StudyDataRepository` operation. The adapter validates the aggregate, checks for every existing `draft` or `active` study, and adds the complete draft in one IndexedDB read-write transaction. This prevents concurrent creation of a second continuing study without changing the database schema. Existing completed and stopped studies remain untouched. The setup flow uses `StudyRepository` only for listing/resume and never persists a standalone active `Study`.
 
+A resumed protocol-1.1 draft may be edited through an identity-preserving application use case. The use case reloads the latest complete aggregate, recalculates only the study date, time zone, and phase date ranges, preserves the study, phase, medication-schedule, observation, annotation, and audit identities, validates the complete result, and saves it atomically. Non-draft and legacy-protocol studies remain read-only; an edit that would make preserved records inconsistent is rejected instead of deleting data.
+
 The app boundary composes the concrete repositories into the bilingual home workflow. Saved plans are read-only in this lot; familiarization, cognitive configuration, planned daily observations, and activation remain separate proposed work.
 
 ## Time handling

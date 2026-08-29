@@ -27,7 +27,7 @@ Only explicit human direction may promote a product lot from `Proposed`. Scienti
 
 | Lot | Status | Scope | Approval note |
 | --- | --- | --- | --- |
-| Draft study setup and controlled phase-plan preview | In review | Protocol 1.1 documentation; one draft `StudyData` with equal configurable 1–90-day phases; atomic single-continuing-study creation; read-only controlled schedules; bilingual mobile-first preview, prerequisite, precautions, validation, persistence errors, and resume. No activation, familiarization sessions, cognitive configuration, planned observations, or treatment recommendations. | Explicit scope and decision-specific approval received on 2026-08-28. |
+| Draft study setup and controlled phase-plan preview | In review | Protocol 1.1 documentation; one editable draft `StudyData` with equal configurable 1–90-day phases; atomic single-continuing-study creation; identity-preserving draft updates; read-only controlled schedules; bilingual mobile-first preview, prerequisite, precautions, validation, persistence errors, and resume. No activation, familiarization sessions, cognitive configuration, planned observations, or treatment recommendations. | Explicit scope and decision-specific approval received on 2026-08-28; edit-on-resume acceptance correction received on 2026-08-29. |
 
 ## Proposed product backlog
 

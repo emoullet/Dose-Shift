@@ -39,9 +39,34 @@ describe('draft study setup', () => {
     expect(screen.getByText('Protocol version 1.1')).toBeInTheDocument();
 
     firstRender.unmount();
-    render(<App />);
+    const resumedRender = render(<App />);
     expect(await screen.findByText(/existing local study has been resumed/)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Saved controlled plan' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit draft' }));
+    expect(screen.getByLabelText('A1 start date')).toHaveValue('2026-09-01');
+    expect(screen.getByLabelText('Days in each phase')).toHaveValue(7);
+    expect(screen.getByLabelText('Study time zone')).toHaveValue('Europe/Paris');
+
+    fireEvent.change(screen.getByLabelText('A1 start date'), { target: { value: '2026-10-10' } });
+    fireEvent.change(screen.getByLabelText('Days in each phase'), { target: { value: '20' } });
+    fireEvent.change(screen.getByLabelText('Study time zone'), { target: { value: 'America/Toronto' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: /correct study time zone/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    expect(await screen.findByText(/Draft changes saved locally/)).toBeInTheDocument();
+    expect(screen.getByText('Time zone: America/Toronto')).toBeInTheDocument();
+    expect(screen.getByText(/does not claim that all phase durations/)).toBeInTheDocument();
+    expect(screen.getByText('10 October 2026')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /activate/i })).not.toBeInTheDocument();
+
+    resumedRender.unmount();
+    render(<App />);
+    expect(await screen.findByRole('button', { name: 'Edit draft' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit draft' }));
+    expect(screen.getByLabelText('A1 start date')).toHaveValue('2026-10-10');
+    expect(screen.getByLabelText('Days in each phase')).toHaveValue(20);
+    expect(screen.getByLabelText('Study time zone')).toHaveValue('America/Toronto');
   });
 
   it('shows localized validation and the non-seven-day notice in French', async () => {

@@ -44,7 +44,7 @@ The user should be able to:
 - Complete familiarization sessions and freeze cognitive-test difficulty and administration settings before `A1`.
 - See transition days identified explicitly.
 
-Protocol version 1.1 uses the original three-week/seven-day-per-phase design as the default. When another common duration is selected, the UI must state that it differs from the original design and must not claim that all durations are scientifically equivalent. The setup flow creates a draft only; clinician/pharmacist validation is presented as a prerequisite and is not persisted as an attestation.
+Protocol version 1.1 uses the original three-week/seven-day-per-phase design as the default. When another common duration is selected, the UI must state that it differs from the original design and must not claim that all durations are scientifically equivalent. The setup flow creates a draft only; clinician/pharmacist validation is presented as a prerequisite and is not persisted as an attestation. A saved protocol-1.1 draft can be reopened and edited before activation without creating another study or replacing existing study data.
 
 ### 2. Record a planned medication intake
 
