@@ -1,6 +1,9 @@
 import type { IDBPTransaction } from 'idb';
 
-import type { StudyDataRepository } from '../application/studies/study-data-repository';
+import type {
+  CreateDraftResult,
+  StudyDataRepository
+} from '../application/studies/study-data-repository';
 import type { EntityId } from '../domain/common/identity';
 import { analysisAnnotationSchema } from '../domain/analysis/analysis-annotation';
 import { auditEntrySchema } from '../domain/audit/audit-entry';
@@ -103,12 +106,40 @@ export class IndexedDbStudyDataRepository implements StudyDataRepository {
     });
   }
 
+  public async createDraftIfNoContinuingStudy(studyData: StudyData): Promise<CreateDraftResult> {
+    const data = studyDataSchema.parse(studyData);
+    if (data.study.status !== 'draft') {
+      throw new Error('The creation-only operation accepts draft studies only');
+    }
+
+    const database = await getDatabase();
+    const transaction = database.transaction(studyDataStoreNames, 'readwrite');
+    const storedStudies = await transaction.objectStore('studies').getAll();
+    const continuingStudyIds = storedStudies
+      .map((value) => studySchema.parse(value))
+      .filter(({ status }) => status === 'draft' || status === 'active')
+      .map(({ id }) => id);
+
+    if (continuingStudyIds.length > 0) {
+      await transaction.done;
+      return { created: false, existingStudyIds: continuingStudyIds };
+    }
+
+    await Promise.all([
+      addStudyData(transaction, data),
+      transaction.done
+    ]);
+    return { created: true };
+  }
+
   public async save(studyData: StudyData): Promise<void> {
     const data = studyDataSchema.parse(studyData);
     const database = await getDatabase();
     const transaction = database.transaction(studyDataStoreNames, 'readwrite');
-    putStudyData(transaction, data);
-    await transaction.done;
+    await Promise.all([
+      putStudyData(transaction, data),
+      transaction.done
+    ]);
   }
 
   public async restoreBackup(studyData: readonly StudyData[]): Promise<void> {
@@ -135,8 +166,10 @@ export class IndexedDbStudyDataRepository implements StudyDataRepository {
       transaction.objectStore('auditEntries').clear()
     ]);
 
-    data.forEach((value) => putStudyData(transaction, value));
-    await transaction.done;
+    await Promise.all([
+      ...data.map((value) => putStudyData(transaction, value)),
+      transaction.done
+    ]);
   }
 }
 
@@ -146,7 +179,7 @@ type StudyDataTransaction = IDBPTransaction<
   'readwrite'
 >;
 
-function putStudyData(transaction: StudyDataTransaction, data: StudyData): void {
+async function putStudyData(transaction: StudyDataTransaction, data: StudyData): Promise<void> {
   const configurationStore = transaction.objectStore('cognitiveTestConfigurations');
   const phaseStore = transaction.objectStore('protocolPhases');
   const medicationStore = transaction.objectStore('medicationIntakes');
@@ -162,21 +195,58 @@ function putStudyData(transaction: StudyDataTransaction, data: StudyData): void 
   const annotationStore = transaction.objectStore('analysisAnnotations');
   const auditStore = transaction.objectStore('auditEntries');
 
-  transaction.objectStore('studies').put(data.study);
-  data.cognitiveTestConfigurations.forEach((value) => configurationStore.put(value));
-  data.protocolPhases.forEach((value) => phaseStore.put(value));
-  data.medicationIntakes.forEach((value) => medicationStore.put(value));
-  data.cognitiveMeasurements.forEach((value) => cognitiveStore.put(value));
-  data.pvtSessions.forEach((value) => pvtStore.put(value));
-  data.associativeMemorySessions.forEach((value) => memoryStore.put(value));
-  data.catheterizationEvents.forEach((value) => catheterizationStore.put(value));
-  data.nightObservations.forEach((value) => nightStore.put(value));
-  data.dailyContexts.forEach((value) => dailyContextStore.put(value));
-  data.caffeineIntakes.forEach((value) => caffeineStore.put(value));
-  data.alcoholIntakes.forEach((value) => alcoholStore.put(value));
-  data.additionalMedicationIntakes.forEach((value) => additionalMedicationStore.put(value));
-  data.analysisAnnotations.forEach((value) => annotationStore.put(value));
-  data.auditEntries.forEach((value) => auditStore.put(value));
+  await Promise.all([
+    transaction.objectStore('studies').put(data.study),
+    ...data.cognitiveTestConfigurations.map((value) => configurationStore.put(value)),
+    ...data.protocolPhases.map((value) => phaseStore.put(value)),
+    ...data.medicationIntakes.map((value) => medicationStore.put(value)),
+    ...data.cognitiveMeasurements.map((value) => cognitiveStore.put(value)),
+    ...data.pvtSessions.map((value) => pvtStore.put(value)),
+    ...data.associativeMemorySessions.map((value) => memoryStore.put(value)),
+    ...data.catheterizationEvents.map((value) => catheterizationStore.put(value)),
+    ...data.nightObservations.map((value) => nightStore.put(value)),
+    ...data.dailyContexts.map((value) => dailyContextStore.put(value)),
+    ...data.caffeineIntakes.map((value) => caffeineStore.put(value)),
+    ...data.alcoholIntakes.map((value) => alcoholStore.put(value)),
+    ...data.additionalMedicationIntakes.map((value) => additionalMedicationStore.put(value)),
+    ...data.analysisAnnotations.map((value) => annotationStore.put(value)),
+    ...data.auditEntries.map((value) => auditStore.put(value))
+  ]);
+}
+
+async function addStudyData(transaction: StudyDataTransaction, data: StudyData): Promise<void> {
+  const configurationStore = transaction.objectStore('cognitiveTestConfigurations');
+  const phaseStore = transaction.objectStore('protocolPhases');
+  const medicationStore = transaction.objectStore('medicationIntakes');
+  const cognitiveStore = transaction.objectStore('cognitiveMeasurements');
+  const pvtStore = transaction.objectStore('pvtSessions');
+  const memoryStore = transaction.objectStore('associativeMemorySessions');
+  const catheterizationStore = transaction.objectStore('catheterizationEvents');
+  const nightStore = transaction.objectStore('nightObservations');
+  const dailyContextStore = transaction.objectStore('dailyContexts');
+  const caffeineStore = transaction.objectStore('caffeineIntakes');
+  const alcoholStore = transaction.objectStore('alcoholIntakes');
+  const additionalMedicationStore = transaction.objectStore('additionalMedicationIntakes');
+  const annotationStore = transaction.objectStore('analysisAnnotations');
+  const auditStore = transaction.objectStore('auditEntries');
+
+  await Promise.all([
+    transaction.objectStore('studies').add(data.study),
+    ...data.cognitiveTestConfigurations.map((value) => configurationStore.add(value)),
+    ...data.protocolPhases.map((value) => phaseStore.add(value)),
+    ...data.medicationIntakes.map((value) => medicationStore.add(value)),
+    ...data.cognitiveMeasurements.map((value) => cognitiveStore.add(value)),
+    ...data.pvtSessions.map((value) => pvtStore.add(value)),
+    ...data.associativeMemorySessions.map((value) => memoryStore.add(value)),
+    ...data.catheterizationEvents.map((value) => catheterizationStore.add(value)),
+    ...data.nightObservations.map((value) => nightStore.add(value)),
+    ...data.dailyContexts.map((value) => dailyContextStore.add(value)),
+    ...data.caffeineIntakes.map((value) => caffeineStore.add(value)),
+    ...data.alcoholIntakes.map((value) => alcoholStore.add(value)),
+    ...data.additionalMedicationIntakes.map((value) => additionalMedicationStore.add(value)),
+    ...data.analysisAnnotations.map((value) => annotationStore.add(value)),
+    ...data.auditEntries.map((value) => auditStore.add(value))
+  ]);
 }
 
 function assertUniqueBackupKeys(data: readonly StudyData[]): void {

@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { analysisAnnotationSchema } from '../analysis/analysis-annotation';
 import { auditEntrySchema } from '../audit/audit-entry';
+import { calendarDaysBetween } from '../common/calendar';
 import { localDateForInstant } from '../common/time';
 import {
   additionalMedicationIntakeSchema,
@@ -120,19 +121,28 @@ function validatePhasePlan(
     addIssue(context, ['protocolPhases', 0, 'startDate'], 'A1 must start on the study start date');
   }
 
+  const phaseDurations = phases.map((phase) =>
+    calendarDaysBetween(phase.startDate, phase.endDate) + 1);
   phases.forEach((phase, index) => {
-    if (daysBetween(phase.startDate, phase.endDate) !== 6) {
-      addIssue(context, ['protocolPhases', index], 'Each protocol phase must span seven calendar days');
+    const duration = phaseDurations[index]!;
+    if (!Number.isInteger(duration) || duration < 1 || duration > 90) {
+      addIssue(context, ['protocolPhases', index],
+        'Each protocol phase must span between 1 and 90 calendar days');
     }
     if (phase.isTransitionStart !== (index > 0)) {
       addIssue(context, ['protocolPhases', index, 'isTransitionStart'],
         'Only B and A2 begin on transition days');
     }
-    if (index > 0 && daysBetween(phases[index - 1]!.endDate, phase.startDate) !== 1) {
+    if (index > 0 &&
+      calendarDaysBetween(phases[index - 1]!.endDate, phase.startDate) !== 1) {
       addIssue(context, ['protocolPhases', index, 'startDate'],
         'Protocol phases must be contiguous and non-overlapping');
     }
   });
+
+  if (new Set(phaseDurations).size !== 1) {
+    addIssue(context, ['protocolPhases'], 'A1, B, and A2 must have equal durations');
+  }
 
   return phases;
 }
@@ -321,11 +331,6 @@ function validateAnnotations(data: StudyDataValue, context: z.RefinementCtx): vo
         'Analysis annotation target must exist in the enclosing study');
     }
   });
-}
-
-function daysBetween(startDate: string, endDate: string): number {
-  return (Date.parse(`${endDate}T00:00:00Z`) - Date.parse(`${startDate}T00:00:00Z`)) /
-    (24 * 60 * 60 * 1000);
 }
 
 function addIssue(context: z.RefinementCtx, path: PropertyKey[], message: string): void {

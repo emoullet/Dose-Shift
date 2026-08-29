@@ -36,14 +36,15 @@ The application may select an initial language from the browser/device locale, b
 
 The user should be able to:
 
-- Define the study start date.
-- See the familiarization period and planned `A1`, `B`, and `A2` phases.
+- Define the `A1` start date, separately from the preceding familiarization period.
+- Set one common `A1`/`B`/`A2` phase duration from 1 to 90 days, defaulting to seven days.
+- See the planned `A1`, `B`, and `A2` phases as contiguous, non-overlapping calendar ranges with equal durations.
 - Confirm the medication schedule associated with each phase.
 - See protocol precautions before enabling a schedule change.
 - Complete familiarization sessions and freeze cognitive-test difficulty and administration settings before `A1`.
 - See transition days identified explicitly.
 
-The initial implementation may ship with the current three-week protocol as a predefined study template rather than supporting a general protocol builder.
+Protocol version 1.1 uses the original three-week/seven-day-per-phase design as the default. When another common duration is selected, the UI must state that it differs from the original design and must not claim that all durations are scientifically equivalent. The setup flow creates a draft only; clinician/pharmacist validation is presented as a prerequisite and is not persisted as an attestation.
 
 ### 2. Record a planned medication intake
 

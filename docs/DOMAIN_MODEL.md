@@ -10,6 +10,8 @@ It defines domain intent, not the final IndexedDB table layout.
 
 A `Study` represents one execution of a versioned protocol.
 
+New draft studies created from the controlled setup flow use protocol version `1.1`. Existing studies retain their recorded protocol version.
+
 Suggested fields:
 
 - `id`
@@ -36,6 +38,8 @@ A paused/resumed state is intentionally omitted from the initial model because a
 Familiarization precedes the analyzed A-B-A study. Familiarization sessions remain stored but are excluded from the A-B-A analysis by design.
 
 The analyzed phases are explicit `A1`, `B`, and `A2` phases rather than an undifferentiated `A`, `B`, `A` sequence.
+
+For protocol version 1.1, the selected study start date is the start of `A1`. The three analyzed phases have one common inclusive duration from 1 to 90 calendar days, defaulting to seven. Their stored start and end dates must prove that the phases have equal durations and are contiguous and non-overlapping; no redundant duration field is stored. `B` and `A2` retain explicit transition-start markers. Existing valid seven-day studies remain valid.
 
 A phase snapshot should include:
 

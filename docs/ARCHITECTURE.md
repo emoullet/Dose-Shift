@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented foundation, validated study domain model, local persistence, and complete JSON backup envelope. Feature workflows remain intentionally open.
+Implemented foundation, validated study domain model, local persistence, complete JSON backup envelope, and draft study setup with a controlled phase-plan preview. Later measurement workflows remain intentionally open.
 
 ## Product shape
 
@@ -106,6 +106,12 @@ PVT and associative-memory trials are embedded in their parent session records. 
 IndexedDB version 2 stores each top-level entity type separately and indexes study-scoped records by study identifier. The study-data adapter validates on both reads and writes. Its normal save operation upserts supplied records without deleting omissions; its explicitly named backup-restore operation atomically replaces all local study data from the authoritative complete envelope. Database version 1 remains an explicit migration step, and the version-2 migration adds the complete stores while upgrading foundation-era study records.
 
 Aggregate validation checks controlled phase schedules, medication-plan references, phase and measurement dates, per-day slot uniqueness, objective-test summaries, and frozen PVT administration settings. `DailyContext.analysis` is authoritative for day-level analysis state; generic annotations apply only to cognitive sessions and protocol transitions.
+
+The draft-study application builder creates a complete protocol-1.1 `StudyData` aggregate with three controlled phases and empty observation collections. It derives the common 1–90-day duration from phase dates rather than persisting a redundant field. Calendar plans use UTC component arithmetic over ISO local dates, avoiding elapsed-time and daylight-saving shifts.
+
+Draft creation uses a creation-only `StudyDataRepository` operation. The adapter validates the aggregate, checks for every existing `draft` or `active` study, and adds the complete draft in one IndexedDB read-write transaction. This prevents concurrent creation of a second continuing study without changing the database schema. Existing completed and stopped studies remain untouched. The setup flow uses `StudyRepository` only for listing/resume and never persists a standalone active `Study`.
+
+The app boundary composes the concrete repositories into the bilingual home workflow. Saved plans are read-only in this lot; familiarization, cognitive configuration, planned daily observations, and activation remain separate proposed work.
 
 ## Time handling
 
