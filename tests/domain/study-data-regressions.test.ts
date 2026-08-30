@@ -64,7 +64,15 @@ describe('study-data aggregate regressions', () => {
       protocolPhases: data.protocolPhases.map((phase) => phase.kind === 'A1'
         ? { ...phase, endDate: '2026-09-06' }
         : phase)
-    }, 'Each protocol phase must span seven calendar days');
+    }, 'A1, B, and A2 must have equal durations');
+    expectAggregateIssue({
+      ...data,
+      protocolPhases: data.protocolPhases.map((phase, index) => ({
+        ...phase,
+        startDate: '2026-09-01',
+        endDate: index === 0 ? '2026-11-30' : phase.endDate
+      }))
+    }, 'Each protocol phase must span between 1 and 90 calendar days');
     expectAggregateIssue({
       ...data,
       study: { ...data.study, startDate: '2026-09-02' }

@@ -1,9 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { createEntityId } from '../../src/domain/common/identity';
-import { instantSchema } from '../../src/domain/common/time';
+import { createEntityId, entityIdSchema } from '../../src/domain/common/identity';
+import { buildDraftStudyData } from '../../src/application/studies/build-draft-study-data';
+import { updateDraftStudyData } from '../../src/application/studies/update-draft-study';
+import { instantSchema, localDateSchema, timeZoneSchema } from '../../src/domain/common/time';
 import { studyDataSchema } from '../../src/domain/study/study-data';
 import { IndexedDbStudyDataRepository } from '../../src/persistence/indexed-db-study-data-repository';
+import { IndexedDbStudyRepository } from '../../src/persistence/indexed-db-study-repository';
 import {
   createStudyExport,
   parseStudyExportJson,
@@ -95,4 +98,104 @@ describe('IndexedDbStudyDataRepository', () => {
     await expect(repository.save(invalid as never)).rejects.toThrow();
     await expect(repository.getByStudyId(data.study.id)).resolves.toBeUndefined();
   });
+
+  it('creates and reloads one complete draft atomically without replacing completed studies', async () => {
+    const completed = createCompleteStudyData();
+    const repository = new IndexedDbStudyDataRepository();
+    await repository.save({ ...completed, study: { ...completed.study, status: 'completed' } });
+    const draft = createDraft('2026-10-01', 7);
+
+    await expect(repository.createDraftIfNoContinuingStudy(draft))
+      .resolves.toEqual({ created: true });
+    const reloaded = await repository.getByStudyId(draft.study.id);
+    expect(reloaded).toEqual(expect.objectContaining({ study: draft.study }));
+    expect(reloaded!.protocolPhases).toEqual(expect.arrayContaining(draft.protocolPhases));
+    expect(reloaded!.protocolPhases).toHaveLength(3);
+    expect(reloaded!.protocolPhases.flatMap(({ medicationSchedule }) => medicationSchedule)).toHaveLength(6);
+    expect(reloaded!.cognitiveTestConfigurations).toEqual([]);
+    expect(reloaded!.medicationIntakes).toEqual([]);
+    expect(reloaded!.cognitiveMeasurements).toEqual([]);
+    await expect(repository.getByStudyId(completed.study.id)).resolves.toBeDefined();
+  });
+
+  it('updates a draft plan without creating stale phases or another continuing study', async () => {
+    const repository = new IndexedDbStudyDataRepository();
+    const draft = createDraft('2026-10-01', 7);
+    await repository.createDraftIfNoContinuingStudy(draft);
+
+    const updated = updateDraftStudyData(draft, {
+      a1StartDate: localDateSchema.parse('2026-11-15'),
+      timeZone: timeZoneSchema.parse('America/Toronto'),
+      phaseDurationDays: 20
+    });
+    await repository.save(updated);
+
+    const reloaded = await repository.getByStudyId(draft.study.id);
+    expect(reloaded!.study.id).toBe(draft.study.id);
+    expect(reloaded!.study.startDate).toBe('2026-11-15');
+    expect(reloaded!.study.timeZone).toBe('America/Toronto');
+    expect(reloaded!.protocolPhases).toHaveLength(3);
+    expect(reloaded!.protocolPhases.map(({ id }) => id))
+      .toEqual(expect.arrayContaining(draft.protocolPhases.map(({ id }) => id)));
+    expect(reloaded!.protocolPhases.flatMap(({ medicationSchedule }) => medicationSchedule))
+      .toHaveLength(6);
+    const continuing = (await new IndexedDbStudyRepository().list())
+      .filter(({ status }) => status === 'draft' || status === 'active');
+    expect(continuing).toHaveLength(1);
+  });
+
+  it('allows exactly one draft under concurrent creation attempts', async () => {
+    const repository = new IndexedDbStudyDataRepository();
+    const drafts = [createDraft('2026-10-01', 1), createDraft('2026-11-01', 90)];
+
+    const results = await Promise.all(drafts.map((draft) =>
+      repository.createDraftIfNoContinuingStudy(draft)));
+
+    expect(results.filter(({ created }) => created)).toHaveLength(1);
+    expect(results.filter(({ created }) => !created)).toHaveLength(1);
+    const studies = await new IndexedDbStudyRepository().list();
+    expect(studies.filter(({ status }) => status === 'draft' || status === 'active')).toHaveLength(1);
+  });
+
+  it('makes no writes when an active study already exists', async () => {
+    const active = createCompleteStudyData();
+    const repository = new IndexedDbStudyDataRepository();
+    await repository.save(active);
+    const draft = createDraft('2026-10-01', 7);
+
+    const result = await repository.createDraftIfNoContinuingStudy(draft);
+
+    expect(result).toEqual({ created: false, existingStudyIds: [active.study.id] });
+    await expect(repository.getByStudyId(draft.study.id)).resolves.toBeUndefined();
+    await expect(repository.getByStudyId(active.study.id)).resolves.toBeDefined();
+  });
+
+  it('rolls back the complete draft when a child key collides with preserved data', async () => {
+    const completed = createCompleteStudyData();
+    const repository = new IndexedDbStudyDataRepository();
+    await repository.save({ ...completed, study: { ...completed.study, status: 'completed' } });
+    let generatedId = 0;
+    const draft = buildDraftStudyData({
+      a1StartDate: localDateSchema.parse('2026-10-01'),
+      timeZone: timeZoneSchema.parse('Europe/Paris'),
+      phaseDurationDays: 7
+    }, {
+      createId: () => generatedId++ === 1
+        ? completed.protocolPhases[0]!.id
+        : entityIdSchema.parse(`10000000-0000-4000-8000-${String(generatedId).padStart(12, '0')}`),
+      now: () => instantSchema.parse('2026-09-01T10:00:00+02:00')
+    });
+
+    await expect(repository.createDraftIfNoContinuingStudy(draft)).rejects.toThrow();
+    await expect(repository.getByStudyId(draft.study.id)).resolves.toBeUndefined();
+    await expect(repository.getByStudyId(completed.study.id)).resolves.toBeDefined();
+  });
 });
+
+function createDraft(startDate: string, duration: number) {
+  return buildDraftStudyData({
+    a1StartDate: localDateSchema.parse(startDate),
+    timeZone: timeZoneSchema.parse('Europe/Paris'),
+    phaseDurationDays: duration
+  });
+}

@@ -1,5 +1,7 @@
 # Medication Timing Protocol
 
+Controlled protocol version: `1.1`.
+
 ## Objective
 
 Evaluate whether the daily temporal profile of cognitive performance changes when fesoterodine intake is moved from morning to evening, while checking that the timing change does not worsen bladder control.
@@ -14,11 +16,13 @@ This single-subject study looks for within-person variation compatible with a di
 
 ## Experimental design
 
-Single-subject A-B-A trial over three weeks, with no dose changes:
+Single-subject A-B-A trial with no dose changes. The selected study start date is the first day of `A1`, not the start of familiarization.
 
-- Week 1 (`A1`): usual schedule, with both medications in the morning.
-- Week 2 (`B`): solifenacin in the morning and fesoterodine in the evening, ideally around 21:00–22:00, only after validation by the prescribing clinician or pharmacist.
-- Week 3 (`A2`): return to the usual schedule, with both medications in the morning.
+The analyzed phases use one common configurable duration from 1 to 90 calendar days. The default is seven days per phase, preserving the original three-week design. `A1`, `B`, and `A2` must have equal durations and remain contiguous and non-overlapping. A different duration must be identified clearly; this protocol and the application do not claim that all durations are scientifically equivalent.
+
+- `A1`: usual schedule, with both medications in the morning.
+- `B`: solifenacin in the morning and fesoterodine in the evening, ideally around 21:00–22:00, only after validation by the prescribing clinician or pharmacist.
+- `A2`: return to the usual schedule, with both medications in the morning.
 
 ### Familiarization
 

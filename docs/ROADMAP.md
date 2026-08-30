@@ -21,12 +21,13 @@ Only explicit human direction may promote a product lot from `Proposed`. Scienti
 | --- | --- | --- |
 | Application and local-first PWA foundation | Done | Present on the default branch. |
 | Validated study domain, persistence, migrations, and versioned export foundation | Done | Present on the default branch with domain, persistence, migration, and serialization tests. |
+| Durable supervised multi-agent delivery workflow | Done | Merged in PR #6 on 2026-08-28. |
 
-## Active governance lot
+## Active product lot
 
 | Lot | Status | Scope | Approval note |
 | --- | --- | --- | --- |
-| Durable supervised multi-agent delivery workflow | In progress | Repository instructions, project-scoped agent profiles, workflow, roadmap, pull request controls, and validation only; no application or protocol behavior changes. | Explicitly requested on 2026-08-28. |
+| Draft study setup and controlled phase-plan preview | In review | Protocol 1.1 documentation; one editable draft `StudyData` with equal configurable 1–90-day phases; atomic single-continuing-study creation; identity-preserving draft updates; read-only controlled schedules; bilingual mobile-first preview, prerequisite, precautions, validation, persistence errors, and resume. No activation, familiarization sessions, cognitive configuration, planned observations, or treatment recommendations. | Explicit scope and decision-specific approval received on 2026-08-28; edit-on-resume acceptance correction received on 2026-08-29. |
 
 ## Proposed product backlog
 
@@ -34,7 +35,7 @@ The following lots are proposals, not commitments. Their ordering is provisional
 
 | Proposed lot | Status | Approval-sensitive questions |
 | --- | --- | --- |
-| Study creation, familiarization, and phase-plan UI | Proposed | Protocol presentation, schedule confirmation, transition warnings, and clinician/pharmacist validation evidence. |
+| Familiarization sessions and frozen cognitive-test configuration | Proposed | Session count/timing, calibration workflow, difficulty target, instrument configuration, freeze evidence, and pre-A1 readiness. |
 | Planned medication-intake recording flow | Proposed | Medication and schedule semantics, partial-dose handling, deviations, warnings, and stop conditions. |
 | Scheduled cognitive-session shell and self-ratings | Proposed | Instrument order, anchors, missingness, session timing, and frozen configuration. |
 | Integrated PVT methodology and implementation decision | Proposed | Whether to integrate, lapse threshold, timing rigor, device/response constraints, trial handling, and interpretation limits. |
