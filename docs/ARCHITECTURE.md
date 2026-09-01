@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented foundation, validated study domain model, local persistence, complete JSON backup envelope, and draft study setup with a controlled phase-plan preview. Later measurement workflows remain intentionally open.
+Implemented foundation, validated study domain model, local persistence, complete JSON backup envelope, draft study setup with a controlled phase-plan preview, and an isolated technical PVT timing prototype. Later measurement workflows remain intentionally open.
 
 ## Product shape
 
@@ -113,7 +113,7 @@ Draft creation uses a creation-only `StudyDataRepository` operation. The adapter
 
 A resumed protocol-1.1 draft may be edited through an identity-preserving application use case. The use case reloads the latest complete aggregate, recalculates only the study date, time zone, and phase date ranges, preserves the study, phase, medication-schedule, observation, annotation, and audit identities, validates the complete result, and saves it atomically. Non-draft and legacy-protocol studies remain read-only; an edit that would make preserved records inconsistent is rejected instead of deleting data.
 
-The app boundary composes the concrete repositories into the bilingual home workflow. Saved plans are read-only in this lot; familiarization, cognitive configuration, planned daily observations, and activation remain separate proposed work.
+The app boundary composes the concrete repositories into the bilingual home workflow. Protocol-1.1 drafts remain editable before activation; familiarization, cognitive configuration, planned daily observations, and activation remain separate proposed work.
 
 ## Time handling
 
@@ -157,6 +157,10 @@ The initial data model should allow PVT results to originate either from:
 - A future integrated PVT module.
 
 If an integrated PVT is implemented, raw trial-level reaction times should be preservable rather than storing only summary statistics. Methodological details such as stimulus timing, lapse threshold, warm-up behavior, browser timing APIs, and device consistency must be specified before relying on the integrated test for study conclusions.
+
+The current technical timing prototype is deliberately outside that study architecture. Its versioned engine uses an injected monotonic clock, holds raw attempts and derived summaries only in memory, and has no dependency on domain schemas, IndexedDB adapters, migrations, or export envelopes. Page visibility, focus, and orientation loss invalidate the run. The PWA exposes the harness in English and French for mobile-first testing and desktop preview, while explicitly stating that neither the browser instrument nor its candidate 355 ms threshold has been validated.
+
+The prototype may inform a later physical timing-validation lot. It cannot supply study sessions, familiarization evidence, or cognitive-test configuration, and it does not amend controlled protocol version 1.1. A later decision must define acceptable hardware/browser combinations, final scoring rules, and protocol wording before any integrated PVT result can enter `StudyData`.
 
 ## Security and privacy
 

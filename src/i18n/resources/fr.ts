@@ -6,6 +6,7 @@ export const fr = {
     },
     navigation: {
       home: 'Accueil',
+      pvtPrototype: 'Prototype PVT',
       data: 'Données',
       settings: 'Paramètres'
     },
@@ -83,6 +84,50 @@ export const fr = {
       formulation: {
         extended_release: 'à libération prolongée',
         standard: 'formulation standard'
+      }
+    },
+    pvtPrototype: {
+      eyebrow: 'Banc technique de chronométrage',
+      heading: 'Prototype de chronométrage PVT',
+      introduction: 'Testez la boucle de chronométrage proposée dans le navigateur sans créer ni modifier aucune donnée d’étude.',
+      warningTitle: 'Prototype uniquement — aucune donnée d’étude',
+      warningDescription: 'Cet instrument n’a pas été validé sur ce matériel. Les résultats restent en mémoire, ne sont pas des scores médicaux et ne doivent pas servir aux conclusions de l’étude.',
+      preparationTitle: 'Préparer l’essai technique',
+      instructionPhone: 'Utilisez le même téléphone que celui prévu pour la future validation technique.',
+      instructionLandscape: 'Tenez le téléphone en orientation paysage.',
+      instructionThumb: 'Utilisez toujours le même pouce et touchez la grande surface de réponse dès que le stimulus apparaît.',
+      instructionFocus: 'Gardez cette page visible et active. La quitter ou changer d’orientation invalide l’essai.',
+      desktopWarning: 'L’utilisation sur ordinateur sert uniquement à la prévisualisation. Elle ne valide pas le chronométrage de l’écran ni du toucher du téléphone.',
+      landscapeRequired: 'Tournez le téléphone en orientation paysage avant de lancer l’essai technique.',
+      durationLabel: 'Durée de l’essai',
+      durationValue: '{{seconds}} secondes',
+      intervalLabel: 'Intervalle pseudo-aléatoire',
+      intervalValue: '{{minimum}}–{{maximum}} secondes',
+      candidateThresholdLabel: 'Seuil candidat de réponse lente',
+      candidateThresholdValue: '≥ {{milliseconds}} ms — non validé',
+      startAction: 'Lancer l’essai technique',
+      countdownLabel: 'Restez immobile. L’essai commence dans',
+      runningTitle: 'Essai technique PVT en cours',
+      timeRemaining: 'Jusqu’à {{seconds}} secondes restantes',
+      responseSurfaceLabel: 'Surface de réponse tactile',
+      stimulus: 'MAINTENANT',
+      runningHelp: 'Un toucher avant le stimulus ou inférieur à {{milliseconds}} ms est un faux départ. Un stimulus affiché expire après {{timeoutSeconds}} secondes.',
+      summaryTitle: 'Résumé technique',
+      summaryCaution: 'Ces valeurs sont calculées uniquement à partir des tentatives conservées en mémoire. Elles ne sont pas enregistrées et n’ont aucune interprétation médicale.',
+      validResponses: 'Réponses valides',
+      falseStarts: 'Faux départs',
+      timeouts: 'Expirations',
+      candidateLapses: 'Réponses lentes candidates (≥355 ms)',
+      meanReciprocalRt: 'TR réciproque moyen (1/s)',
+      medianRt: 'TR médian (ms), secondaire',
+      memoryOnly: '{{attempts}} tentatives brutes conservées en mémoire pour le prototype {{version}}. Recharger ou quitter cette page les efface.',
+      restartAction: 'Relancer le prototype',
+      version: 'Moteur du prototype {{version}}',
+      interruption: {
+        visibility_lost: 'Essai interrompu car la page n’était plus visible. La tentative en cours a été conservée comme techniquement invalide.',
+        focus_lost: 'Essai interrompu car la page a perdu le focus. La tentative en cours a été conservée comme techniquement invalide.',
+        orientation_changed: 'Essai interrompu en raison d’un changement d’orientation. La tentative en cours a été conservée comme techniquement invalide.',
+        session_ended: 'L’essai technique a atteint sa limite de durée.'
       }
     },
     data: {

@@ -145,3 +145,17 @@ Project-scoped Codex configuration caps spawned threads at three per session and
 The draft setup displays the controlled medication identities, formulations, doses, and timing windows read-only. Clinician/pharmacist validation is shown only as a prerequisite and is neither recorded nor claimed. Creation preserves every existing study and atomically refuses a second `draft` or `active` study. A resumed protocol-1.1 draft remains editable before activation: replanning preserves all existing entity identifiers and collections, and validation rejects changes that would conflict with preserved records rather than deleting them.
 
 **Reason:** A bounded draft setup makes the controlled plan inspectable before familiarization while preserving the medication-safety boundary, legacy seven-day data, local-first integrity, and explicit human validation requirements.
+
+## 2026-08-30 — PVT timing prototype boundary and parameters
+
+The following seven decisions were explicitly approved for the technical prototype lot:
+
+1. **Non-study prototype:** Build a versioned PVT-B-inspired timing harness outside the study domain. It must not create familiarization evidence, cognitive measurements, activation state, or any other study record.
+2. **Fixed prototype timing:** Run for 180 seconds with pseudo-random 1–4-second inter-stimulus intervals, accept the primary `pointerdown` touch response, classify a response without a visible stimulus or below 100 ms as a false start, and time out a displayed stimulus after 30 seconds.
+3. **Candidate threshold only:** Derive a candidate lapse count using reaction times greater than or equal to 355 ms. This threshold is not validated for the browser, device, or user and must not be presented as final protocol methodology.
+4. **Raw in-memory evidence:** Use an injected monotonic clock and preserve every raw attempt in memory with order, planned interval, monotonic offsets, outcome, and derived reaction time when applicable. Derive valid-response count, false starts, timeouts, candidate lapses, mean reciprocal reaction time, and secondary median reaction time only from those attempts.
+5. **Controlled interaction conditions:** Present a bilingual, mobile-first preparation, countdown, landscape touch surface, run, and technical summary. Instruct the user to use the same phone, landscape orientation, and thumb. Desktop is a preview with an explicit warning, not a validation environment.
+6. **Invalidating interruptions:** Loss of page visibility or focus and an orientation change interrupt the run without resumption and retain the current attempt in memory as `technical_invalid` with its reason.
+7. **Validation and protocol gate:** Add no telemetry, network dependency, persistent storage, IndexedDB record, `StudyData` field, migration, export change, medical score, interpretation, or recommendation. The controlled protocol remains version 1.1 and is not amended by this lot; final instrument methodology and any protocol amendment require separate technical validation and explicit approval.
+
+**Reason:** A browser can exercise deterministic scheduling and data-reduction logic before the target hardware has been characterized, but automated software tests cannot establish display and touch latency. Keeping the harness visibly outside study data prevents an unvalidated implementation or candidate threshold from being mistaken for a controlled study instrument.

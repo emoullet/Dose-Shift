@@ -6,6 +6,7 @@ export const en = {
     },
     navigation: {
       home: 'Home',
+      pvtPrototype: 'PVT prototype',
       data: 'Data',
       settings: 'Settings'
     },
@@ -83,6 +84,50 @@ export const en = {
       formulation: {
         extended_release: 'extended release',
         standard: 'standard formulation'
+      }
+    },
+    pvtPrototype: {
+      eyebrow: 'Technical timing harness',
+      heading: 'PVT timing prototype',
+      introduction: 'Exercise the proposed browser timing loop without creating or changing any study record.',
+      warningTitle: 'Prototype only — not study data',
+      warningDescription: 'This instrument has not been validated on this hardware. Results stay in memory, are not medical scores, and must not be used for study conclusions.',
+      preparationTitle: 'Prepare the technical run',
+      instructionPhone: 'Use the same phone intended for later technical validation.',
+      instructionLandscape: 'Hold the phone in landscape orientation.',
+      instructionThumb: 'Use the same thumb and touch the large response surface as soon as the stimulus appears.',
+      instructionFocus: 'Keep this page visible and focused. Leaving it or changing orientation invalidates the run.',
+      desktopWarning: 'Desktop use is a preview only. It does not validate phone display or touch timing.',
+      landscapeRequired: 'Rotate the phone to landscape before starting the technical run.',
+      durationLabel: 'Run duration',
+      durationValue: '{{seconds}} seconds',
+      intervalLabel: 'Pseudo-random interval',
+      intervalValue: '{{minimum}}–{{maximum}} seconds',
+      candidateThresholdLabel: 'Candidate lapse threshold',
+      candidateThresholdValue: '≥ {{milliseconds}} ms — not validated',
+      startAction: 'Start technical run',
+      countdownLabel: 'Keep still. The run starts in',
+      runningTitle: 'Technical PVT run in progress',
+      timeRemaining: 'Up to {{seconds}} seconds remaining',
+      responseSurfaceLabel: 'Touch response surface',
+      stimulus: 'NOW',
+      runningHelp: 'Touching before the stimulus or under {{milliseconds}} ms is a false start. A displayed stimulus times out after {{timeoutSeconds}} seconds.',
+      summaryTitle: 'Technical summary',
+      summaryCaution: 'These values are derived only from the in-memory attempts. They are not persisted and have no medical interpretation.',
+      validResponses: 'Valid responses',
+      falseStarts: 'False starts',
+      timeouts: 'Timeouts',
+      candidateLapses: 'Candidate lapses (≥355 ms)',
+      meanReciprocalRt: 'Mean reciprocal RT (1/s)',
+      medianRt: 'Median RT (ms), secondary',
+      memoryOnly: '{{attempts}} raw attempts retained in memory for prototype {{version}}. Reloading or leaving this page clears them.',
+      restartAction: 'Run prototype again',
+      version: 'Prototype engine {{version}}',
+      interruption: {
+        visibility_lost: 'Run interrupted because the page was no longer visible. The current attempt was retained as technically invalid.',
+        focus_lost: 'Run interrupted because the page lost focus. The current attempt was retained as technically invalid.',
+        orientation_changed: 'Run interrupted because orientation changed. The current attempt was retained as technically invalid.',
+        session_ended: 'The technical run reached its duration boundary.'
       }
     },
     data: {
