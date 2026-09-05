@@ -51,6 +51,7 @@ export function PvtPrototypeScreen({
   const [view, setView] = useState<PrototypeView>('preparation');
   const [countdown, setCountdown] = useState(countdownSeconds);
   const [snapshot, setSnapshot] = useState<PvtPrototypeSnapshot>();
+  const [displayElapsedMs, setDisplayElapsedMs] = useState(0);
   const [landscape, setLandscape] = useState(isLandscape);
   const [preparationIssue, setPreparationIssue] = useState<PreparationIssue>();
   const engineRef = useRef<PvtPrototypeEngine | undefined>(undefined);
@@ -63,6 +64,7 @@ export function PvtPrototypeScreen({
 
   const applySnapshot = useCallback((nextSnapshot: PvtPrototypeSnapshot) => {
     setSnapshot(nextSnapshot);
+    setDisplayElapsedMs(nextSnapshot.elapsedMs);
     if (nextSnapshot.phase === 'completed' || nextSnapshot.phase === 'interrupted') {
       setView('summary');
     }
@@ -162,7 +164,7 @@ export function PvtPrototypeScreen({
       const engine = createEngine();
       engineRef.current = engine;
       initialOrientationRef.current = currentOrientation;
-      setSnapshot(engine.start());
+      applySnapshot(engine.start());
       setView('running');
       return removeListeners;
     }
@@ -172,7 +174,24 @@ export function PvtPrototypeScreen({
       window.clearTimeout(timer);
       removeListeners();
     };
-  }, [countdown, createEngine, desktopPreview, view]);
+  }, [applySnapshot, countdown, createEngine, desktopPreview, view]);
+
+  useEffect(() => {
+    if (view !== 'running') {
+      return undefined;
+    }
+    const engine = engineRef.current;
+    if (engine === undefined) {
+      return undefined;
+    }
+
+    const refreshElapsedTime = () => {
+      setDisplayElapsedMs(engine.getSnapshot().elapsedMs);
+    };
+    refreshElapsedTime();
+    const timer = window.setInterval(refreshElapsedTime, 250);
+    return () => window.clearInterval(timer);
+  }, [view]);
 
   useEffect(() => {
     if (view !== 'running' || snapshot?.nextTransitionAtMs === undefined) {
@@ -253,6 +272,7 @@ export function PvtPrototypeScreen({
     initialOrientationRef.current = orientation;
     setCountdown(countdownSeconds);
     setSnapshot(undefined);
+    setDisplayElapsedMs(0);
     setPreparationIssue(undefined);
     engineRef.current = undefined;
     setView('countdown');
@@ -378,7 +398,7 @@ export function PvtPrototypeScreen({
           </h2>
           <div className="pvt-progress" aria-live="off">
             {t('pvtPrototype.timeRemaining', {
-              seconds: Math.ceil((pvtPrototypeDurationMs - snapshot.elapsedMs) / 1_000)
+              seconds: Math.ceil((pvtPrototypeDurationMs - displayElapsedMs) / 1_000)
             })}
           </div>
           <button

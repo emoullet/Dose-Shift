@@ -18,6 +18,7 @@ describe('PVT timing prototype UI', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     cleanup();
     if (originalOrientationDescriptor === undefined) {
       Reflect.deleteProperty(globalThis.screen, 'orientation');
@@ -197,6 +198,28 @@ describe('PVT timing prototype UI', () => {
     expect(await screen.findByRole('heading', { name: 'Technical summary' })).toBeInTheDocument();
     expect(screen.getByText(/2 raw attempts retained in memory/)).toBeInTheDocument();
     expect(screen.getByText('1', { selector: 'dd' })).toBeInTheDocument();
+  });
+
+  it('refreshes the remaining time independently of stimulus transitions', () => {
+    vi.useFakeTimers();
+    const clock = { value: 0 };
+    render(
+      <PvtPrototypeScreen
+        countdownSeconds={0}
+        createEngine={() => new PvtPrototypeEngine(
+          { now: () => clock.value },
+          { next: () => 0.999 }
+        )}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start technical run' }));
+    expect(screen.getByText('Up to 180 seconds remaining')).toBeInTheDocument();
+
+    clock.value = 1_100;
+    act(() => vi.advanceTimersByTime(1_000));
+
+    expect(screen.getByText('Up to 179 seconds remaining')).toBeInTheDocument();
   });
 
   it('does not autofocus the response surface on a coarse-pointer phone', async () => {
