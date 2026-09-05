@@ -212,6 +212,27 @@ describe('PVT timing prototype engine', () => {
     expect(completed.summary.timeoutCount).toBe(0);
     expect(completed.summary.lapseCount).toBe(0);
   });
+
+  it('does not turn a stimulus censored at 180 seconds into a late timeout', () => {
+    const clock = new TestClock();
+    const engine = new PvtPrototypeEngine(clock, { next: () => 0 });
+    engine.start();
+    clock.value = 179_000;
+    engine.activateStimulus();
+
+    clock.value = 210_000;
+    const completed = engine.advance();
+
+    expect(completed.phase).toBe('completed');
+    expect(completed.attempts[0]).toMatchObject({
+      outcome: 'technical_invalid',
+      technicalInvalidReason: 'session_ended',
+      stimulusActivatedOffsetMs: 179_000,
+      endedOffsetMs: pvtPrototypeDurationMs
+    });
+    expect(completed.summary.timeoutCount).toBe(0);
+    expect(completed.summary.lapseCount).toBe(0);
+  });
 });
 
 function attempt(

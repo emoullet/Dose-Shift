@@ -228,8 +228,11 @@ export class PvtPrototypeEngine {
 
   private resolveTimeoutIfDue(elapsedMs: number): boolean {
     const stimulusOffsetMs = this.pendingAttempt?.stimulusActivatedOffsetMs;
-    if (stimulusOffsetMs === undefined ||
-      elapsedMs - stimulusOffsetMs < pvtPrototypeTimeoutMs) {
+    if (stimulusOffsetMs === undefined) {
+      return false;
+    }
+    const timeoutAtMs = stimulusOffsetMs + pvtPrototypeTimeoutMs;
+    if (timeoutAtMs > pvtPrototypeDurationMs || elapsedMs < timeoutAtMs) {
       return false;
     }
 

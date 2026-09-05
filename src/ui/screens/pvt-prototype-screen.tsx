@@ -55,6 +55,7 @@ export function PvtPrototypeScreen({
   const [preparationIssue, setPreparationIssue] = useState<PreparationIssue>();
   const engineRef = useRef<PvtPrototypeEngine | undefined>(undefined);
   const initialOrientationRef = useRef<OrientationIdentity | undefined>(undefined);
+  const responseSurfaceRef = useRef<HTMLButtonElement | null>(null);
   const locale = i18n.resolvedLanguage === 'fr' ? 'fr-FR' : 'en-GB';
   const desktopPreview = typeof window.matchMedia !== 'function' ||
     !window.matchMedia('(pointer: coarse)').matches;
@@ -203,6 +204,12 @@ export function PvtPrototypeScreen({
       }
     };
   }, [applySnapshot, snapshot, view]);
+
+  useEffect(() => {
+    if (view === 'running' && desktopPreview) {
+      responseSurfaceRef.current?.focus({ preventScroll: true });
+    }
+  }, [desktopPreview, view]);
 
   useEffect(() => {
     if (view !== 'running') {
@@ -375,6 +382,7 @@ export function PvtPrototypeScreen({
             })}
           </div>
           <button
+            ref={responseSurfaceRef}
             className={`pvt-response-surface${snapshot.phase === 'stimulus' ? ' stimulus-visible' : ''}`}
             type="button"
             aria-label={t('pvtPrototype.responseSurfaceLabel')}

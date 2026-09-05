@@ -187,6 +187,7 @@ describe('PVT timing prototype UI', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Start technical run' }));
     const responseSurface = await screen.findByRole('button', { name: 'Touch response surface' });
+    expect(responseSurface).toHaveFocus();
 
     clock.value = 200;
     fireEvent.keyDown(responseSurface, { key });
@@ -196,6 +197,26 @@ describe('PVT timing prototype UI', () => {
     expect(await screen.findByRole('heading', { name: 'Technical summary' })).toBeInTheDocument();
     expect(screen.getByText(/2 raw attempts retained in memory/)).toBeInTheDocument();
     expect(screen.getByText('1', { selector: 'dd' })).toBeInTheDocument();
+  });
+
+  it('does not autofocus the response surface on a coarse-pointer phone', async () => {
+    installOrientation('landscape-primary', 90);
+    vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({
+      matches: query === '(pointer: coarse)',
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn()
+    }));
+    render(<PvtPrototypeScreen countdownSeconds={0} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start technical run' }));
+    const responseSurface = await screen.findByRole('button', { name: 'Touch response surface' });
+
+    expect(responseSurface).not.toHaveFocus();
   });
 
   it('pluralizes retained raw attempts in English and French', async () => {
