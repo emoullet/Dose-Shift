@@ -5,6 +5,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent
 } from 'react';
+import { flushSync } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -21,6 +22,12 @@ import {
 } from '../../prototype/pvt/pvt-prototype-engine';
 
 type PrototypeView = 'preparation' | 'countdown' | 'running' | 'summary';
+type PreparationIssue = 'orientation_changed_during_countdown';
+
+interface OrientationIdentity {
+  readonly key: string;
+  readonly landscape: boolean;
+}
 
 export interface PvtPrototypeScreenProps {
   readonly countdownSeconds?: number;
@@ -41,8 +48,9 @@ export function PvtPrototypeScreen({
   const [countdown, setCountdown] = useState(countdownSeconds);
   const [snapshot, setSnapshot] = useState<PvtPrototypeSnapshot>();
   const [landscape, setLandscape] = useState(isLandscape);
+  const [preparationIssue, setPreparationIssue] = useState<PreparationIssue>();
   const engineRef = useRef<PvtPrototypeEngine | undefined>(undefined);
-  const initialLandscapeRef = useRef(false);
+  const initialOrientationRef = useRef<OrientationIdentity | undefined>(undefined);
   const locale = i18n.resolvedLanguage === 'fr' ? 'fr-FR' : 'en-GB';
   const desktopPreview = typeof window.matchMedia !== 'function' ||
     !window.matchMedia('(pointer: coarse)').matches;
@@ -78,18 +86,58 @@ export function PvtPrototypeScreen({
     if (view !== 'countdown') {
       return undefined;
     }
+
+    const returnToPreparation = () => {
+      const currentOrientation = getOrientationIdentity();
+      engineRef.current = undefined;
+      setSnapshot(undefined);
+      setLandscape(currentOrientation.landscape);
+      setPreparationIssue('orientation_changed_during_countdown');
+      setView('preparation');
+    };
+    const orientationStillValid = (): boolean => {
+      const currentOrientation = getOrientationIdentity();
+      setLandscape(currentOrientation.landscape);
+      return currentOrientation.key === initialOrientationRef.current?.key &&
+        (desktopPreview || currentOrientation.landscape);
+    };
+    const handleOrientation = () => {
+      if (!orientationStillValid()) {
+        returnToPreparation();
+      }
+    };
+
+    window.addEventListener('resize', handleOrientation);
+    screen.orientation?.addEventListener('change', handleOrientation);
+
+    if (!orientationStillValid()) {
+      returnToPreparation();
+      return () => {
+        window.removeEventListener('resize', handleOrientation);
+        screen.orientation?.removeEventListener('change', handleOrientation);
+      };
+    }
+
     if (countdown <= 0) {
+      const currentOrientation = getOrientationIdentity();
       const engine = createEngine();
       engineRef.current = engine;
-      initialLandscapeRef.current = isLandscape();
+      initialOrientationRef.current = currentOrientation;
       setSnapshot(engine.start());
       setView('running');
-      return undefined;
+      return () => {
+        window.removeEventListener('resize', handleOrientation);
+        screen.orientation?.removeEventListener('change', handleOrientation);
+      };
     }
 
     const timer = window.setTimeout(() => setCountdown((value) => value - 1), 1_000);
-    return () => window.clearTimeout(timer);
-  }, [countdown, createEngine, view]);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('resize', handleOrientation);
+      screen.orientation?.removeEventListener('change', handleOrientation);
+    };
+  }, [countdown, createEngine, desktopPreview, view]);
 
   useEffect(() => {
     if (view !== 'running' || snapshot?.nextTransitionAtMs === undefined) {
@@ -105,7 +153,9 @@ export function PvtPrototypeScreen({
     const timer = window.setTimeout(() => {
       if (snapshot.phase === 'waiting') {
         animationFrame = window.requestAnimationFrame(() => {
-          applySnapshot(engine.presentStimulus());
+          flushSync(() => {
+            applySnapshot(engine.activateStimulus());
+          });
         });
       } else {
         applySnapshot(engine.advance());
@@ -131,7 +181,7 @@ export function PvtPrototypeScreen({
     };
     const handleBlur = () => interrupt('focus_lost');
     const handleOrientation = () => {
-      if (isLandscape() !== initialLandscapeRef.current) {
+      if (getOrientationIdentity().key !== initialOrientationRef.current?.key) {
         interrupt('orientation_changed');
       }
     };
@@ -140,6 +190,7 @@ export function PvtPrototypeScreen({
     window.addEventListener('blur', handleBlur);
     window.addEventListener('resize', handleOrientation);
     screen.orientation?.addEventListener('change', handleOrientation);
+    handleOrientation();
     return () => {
       document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('blur', handleBlur);
@@ -149,8 +200,15 @@ export function PvtPrototypeScreen({
   }, [interrupt, view]);
 
   function beginCountdown(): void {
+    const orientation = getOrientationIdentity();
+    setLandscape(orientation.landscape);
+    if (!desktopPreview && !orientation.landscape) {
+      return;
+    }
+    initialOrientationRef.current = orientation;
     setCountdown(countdownSeconds);
     setSnapshot(undefined);
+    setPreparationIssue(undefined);
     engineRef.current = undefined;
     setView('countdown');
   }
@@ -195,6 +253,11 @@ export function PvtPrototypeScreen({
           )}
           {!desktopPreview && !landscape && (
             <p className="error-message" role="alert">{t('pvtPrototype.landscapeRequired')}</p>
+          )}
+          {preparationIssue === 'orientation_changed_during_countdown' && (
+            <p className="error-message" role="alert">
+              {t('pvtPrototype.countdownOrientationChanged')}
+            </p>
           )}
           <dl className="prototype-parameters">
             <div>
@@ -312,7 +375,29 @@ function SummaryItem({ label, value }: { readonly label: string; readonly value:
 }
 
 function isLandscape(): boolean {
-  return window.innerWidth >= window.innerHeight;
+  return getOrientationIdentity().landscape;
+}
+
+function getOrientationIdentity(): OrientationIdentity {
+  const browserOrientation = screen.orientation;
+  const type = typeof browserOrientation?.type === 'string'
+    ? browserOrientation.type
+    : undefined;
+  const screenAngle = typeof browserOrientation?.angle === 'number'
+    ? browserOrientation.angle
+    : undefined;
+  const legacyAngle = typeof (window as Window & { readonly orientation?: number }).orientation === 'number'
+    ? (window as Window & { readonly orientation: number }).orientation
+    : undefined;
+  const landscape = type?.startsWith('landscape') ?? window.innerWidth >= window.innerHeight;
+
+  if (type !== undefined) {
+    return { key: `screen:${type}:${screenAngle ?? 'unknown'}`, landscape };
+  }
+  if (legacyAngle !== undefined) {
+    return { key: `legacy-angle:${legacyAngle}`, landscape };
+  }
+  return { key: `dimensions:${landscape ? 'landscape' : 'portrait'}`, landscape };
 }
 
 function formatOptionalNumber(value: number | undefined, locale: string, digits: number): string {

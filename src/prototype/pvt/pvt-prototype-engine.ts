@@ -4,6 +4,7 @@ export const pvtPrototypeMinimumIsiMs = 1_000;
 export const pvtPrototypeMaximumIsiMs = 4_000;
 export const pvtPrototypeFalseStartThresholdMs = 100;
 export const pvtPrototypeTimeoutMs = 30_000;
+export const pvtPrototypeTimeoutAnalyticalReactionTimeMs = 30_000;
 export const pvtPrototypeCandidateLapseThresholdMs = 355;
 
 export type PvtPrototypeAttemptOutcome =
@@ -22,11 +23,12 @@ export interface PvtPrototypeAttempt {
   readonly presentationOrder: number;
   readonly plannedInterStimulusIntervalMs: number;
   readonly plannedStimulusOffsetMs: number;
-  readonly stimulusPresentedOffsetMs?: number;
+  readonly stimulusActivatedOffsetMs?: number;
   readonly responseOffsetMs?: number;
   readonly endedOffsetMs: number;
   readonly outcome: PvtPrototypeAttemptOutcome;
   readonly reactionTimeMs?: number;
+  readonly analyticalReactionTimeMs?: number;
   readonly technicalInvalidReason?: PvtPrototypeInterruptionReason;
 }
 
@@ -68,7 +70,7 @@ interface PendingAttempt {
   readonly presentationOrder: number;
   readonly plannedInterStimulusIntervalMs: number;
   readonly plannedStimulusOffsetMs: number;
-  readonly stimulusPresentedOffsetMs?: number;
+  readonly stimulusActivatedOffsetMs?: number;
 }
 
 export class PvtPrototypeEngine {
@@ -92,7 +94,7 @@ export class PvtPrototypeEngine {
     return this.getSnapshot();
   }
 
-  public presentStimulus(): PvtPrototypeSnapshot {
+  public activateStimulus(): PvtPrototypeSnapshot {
     if (this.phase !== 'waiting' || this.pendingAttempt === undefined) {
       return this.getSnapshot();
     }
@@ -105,7 +107,7 @@ export class PvtPrototypeEngine {
     }
     this.pendingAttempt = {
       ...this.pendingAttempt,
-      stimulusPresentedOffsetMs: elapsedMs
+      stimulusActivatedOffsetMs: elapsedMs
     };
     this.phase = 'stimulus';
     return this.getSnapshot();
@@ -123,7 +125,7 @@ export class PvtPrototypeEngine {
       throw new Error('An active PVT prototype phase requires a pending attempt');
     }
 
-    const stimulusOffsetMs = this.pendingAttempt.stimulusPresentedOffsetMs;
+    const stimulusOffsetMs = this.pendingAttempt.stimulusActivatedOffsetMs;
     const reactionTimeMs = stimulusOffsetMs === undefined
       ? undefined
       : elapsedMs - stimulusOffsetMs;
@@ -136,7 +138,10 @@ export class PvtPrototypeEngine {
       responseOffsetMs: elapsedMs,
       endedOffsetMs: elapsedMs,
       outcome,
-      ...(outcome === 'valid_response' && reactionTimeMs !== undefined && { reactionTimeMs })
+      ...(outcome === 'valid_response' && reactionTimeMs !== undefined && {
+        reactionTimeMs,
+        analyticalReactionTimeMs: reactionTimeMs
+      })
     });
     this.scheduleNextAttempt(elapsedMs);
     return this.getSnapshot();
@@ -151,13 +156,17 @@ export class PvtPrototypeEngine {
       return this.completeAtDuration(elapsedMs);
     }
     if (this.phase === 'waiting') {
-      return this.presentStimulus();
+      return this.activateStimulus();
     }
 
-    const stimulusOffsetMs = this.pendingAttempt?.stimulusPresentedOffsetMs;
+    const stimulusOffsetMs = this.pendingAttempt?.stimulusActivatedOffsetMs;
     if (stimulusOffsetMs !== undefined &&
       elapsedMs - stimulusOffsetMs >= pvtPrototypeTimeoutMs) {
-      this.finishPendingAttempt({ endedOffsetMs: elapsedMs, outcome: 'timeout' });
+      this.finishPendingAttempt({
+        endedOffsetMs: elapsedMs,
+        outcome: 'timeout',
+        analyticalReactionTimeMs: pvtPrototypeTimeoutAnalyticalReactionTimeMs
+      });
       this.scheduleNextAttempt(elapsedMs);
     }
     return this.getSnapshot();
@@ -211,7 +220,8 @@ export class PvtPrototypeEngine {
   private finishPendingAttempt(
     result: Pick<PvtPrototypeAttempt, 'endedOffsetMs' | 'outcome'> &
       Partial<Pick<PvtPrototypeAttempt,
-        'responseOffsetMs' | 'reactionTimeMs' | 'technicalInvalidReason'>>
+        'responseOffsetMs' | 'reactionTimeMs' | 'analyticalReactionTimeMs' |
+        'technicalInvalidReason'>>
   ): void {
     if (this.pendingAttempt === undefined) {
       throw new Error('No PVT prototype attempt is pending');
@@ -246,7 +256,7 @@ export class PvtPrototypeEngine {
       );
     }
     if (this.phase === 'stimulus') {
-      const stimulusOffsetMs = this.pendingAttempt?.stimulusPresentedOffsetMs;
+      const stimulusOffsetMs = this.pendingAttempt?.stimulusActivatedOffsetMs;
       return Math.min(
         stimulusOffsetMs === undefined
           ? pvtPrototypeDurationMs
@@ -265,17 +275,27 @@ export function summarizePvtPrototypeAttempts(
     attempt.outcome === 'valid_response' && attempt.reactionTimeMs !== undefined
       ? [attempt.reactionTimeMs]
       : []);
-  const meanReciprocalReactionTimePerSecond = validReactionTimes.length === 0
+  const analyticalReactionTimes = attempts.flatMap((attempt) => {
+    if (attempt.outcome === 'valid_response' && attempt.reactionTimeMs !== undefined) {
+      return [attempt.analyticalReactionTimeMs ?? attempt.reactionTimeMs];
+    }
+    if (attempt.outcome === 'timeout') {
+      return [attempt.analyticalReactionTimeMs ?? pvtPrototypeTimeoutAnalyticalReactionTimeMs];
+    }
+    return [];
+  });
+  const timeoutCount = attempts.filter(({ outcome }) => outcome === 'timeout').length;
+  const meanReciprocalReactionTimePerSecond = analyticalReactionTimes.length === 0
     ? undefined
-    : validReactionTimes.reduce((total, reactionTimeMs) =>
-      total + 1_000 / reactionTimeMs, 0) / validReactionTimes.length;
-  const medianReactionTimeMs = median(validReactionTimes);
+    : analyticalReactionTimes.reduce((total, reactionTimeMs) =>
+      total + 1_000 / reactionTimeMs, 0) / analyticalReactionTimes.length;
+  const medianReactionTimeMs = median(analyticalReactionTimes);
   return {
     validResponseCount: validReactionTimes.length,
     falseStartCount: attempts.filter(({ outcome }) => outcome === 'false_start').length,
-    timeoutCount: attempts.filter(({ outcome }) => outcome === 'timeout').length,
+    timeoutCount,
     lapseCount: validReactionTimes.filter((reactionTimeMs) =>
-      reactionTimeMs >= pvtPrototypeCandidateLapseThresholdMs).length,
+      reactionTimeMs >= pvtPrototypeCandidateLapseThresholdMs).length + timeoutCount,
     ...(meanReciprocalReactionTimePerSecond !== undefined && {
       meanReciprocalReactionTimePerSecond
     }),

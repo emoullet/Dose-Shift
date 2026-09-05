@@ -39,7 +39,7 @@ describe('PVT timing prototype engine', () => {
     engine.start();
 
     clock.value = 1_000;
-    engine.presentStimulus();
+    engine.activateStimulus();
     clock.value = 1_099;
     expect(engine.respond().attempts[0]).toMatchObject({
       outcome: 'false_start',
@@ -47,7 +47,7 @@ describe('PVT timing prototype engine', () => {
     });
 
     clock.value = 2_099;
-    engine.presentStimulus();
+    engine.activateStimulus();
     clock.value = 2_199;
     expect(engine.respond().attempts[1]).toMatchObject({
       outcome: 'valid_response',
@@ -55,7 +55,7 @@ describe('PVT timing prototype engine', () => {
     });
 
     clock.value = 3_199;
-    engine.presentStimulus();
+    engine.activateStimulus();
     clock.value = 3_554;
     const snapshot = engine.respond();
     expect(snapshot.attempts[2]).toMatchObject({
@@ -65,7 +65,7 @@ describe('PVT timing prototype engine', () => {
     expect(snapshot.summary.lapseCount).toBe(1);
   });
 
-  it('derives median and mean reciprocal reaction time only from valid responses', () => {
+  it('includes timeouts in candidate lapses and analytical reaction-time summaries', () => {
     const attempts: PvtPrototypeAttempt[] = [
       attempt(1, 'valid_response', 200),
       attempt(2, 'valid_response', 400),
@@ -79,9 +79,9 @@ describe('PVT timing prototype engine', () => {
       validResponseCount: 3,
       falseStartCount: 1,
       timeoutCount: 1,
-      lapseCount: 2,
-      meanReciprocalReactionTimePerSecond: (5 + 2.5 + 1.25) / 3,
-      medianReactionTimeMs: 400
+      lapseCount: 3,
+      meanReciprocalReactionTimePerSecond: (5 + 2.5 + 1.25 + 1 / 30) / 4,
+      medianReactionTimeMs: 600
     });
   });
 
@@ -90,7 +90,7 @@ describe('PVT timing prototype engine', () => {
     const engine = new PvtPrototypeEngine(clock, { next: () => 0 });
     engine.start();
     clock.value = 1_000;
-    engine.presentStimulus();
+    engine.activateStimulus();
 
     clock.value = 30_999;
     expect(engine.advance().attempts).toHaveLength(0);
@@ -99,10 +99,16 @@ describe('PVT timing prototype engine', () => {
 
     expect(snapshot.attempts[0]).toMatchObject({
       outcome: 'timeout',
-      stimulusPresentedOffsetMs: 1_000,
-      endedOffsetMs: 31_000
+      stimulusActivatedOffsetMs: 1_000,
+      endedOffsetMs: 31_000,
+      analyticalReactionTimeMs: 30_000
     });
+    expect(snapshot.attempts[0]).not.toHaveProperty('responseOffsetMs');
+    expect(snapshot.attempts[0]).not.toHaveProperty('reactionTimeMs');
     expect(snapshot.summary.timeoutCount).toBe(1);
+    expect(snapshot.summary.lapseCount).toBe(1);
+    expect(snapshot.summary.medianReactionTimeMs).toBe(30_000);
+    expect(snapshot.summary.meanReciprocalReactionTimePerSecond).toBeCloseTo(1 / 30);
   });
 
   it.each([
@@ -159,6 +165,9 @@ function attempt(
     plannedStimulusOffsetMs: presentationOrder * 1_000,
     endedOffsetMs: presentationOrder * 1_000 + (reactionTimeMs ?? 0),
     outcome,
+    ...(outcome === 'valid_response' && reactionTimeMs !== undefined && {
+      analyticalReactionTimeMs: reactionTimeMs
+    }),
     ...(reactionTimeMs !== undefined && { reactionTimeMs })
   };
 }
