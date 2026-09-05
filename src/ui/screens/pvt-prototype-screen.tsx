@@ -3,6 +3,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent
 } from 'react';
 import { flushSync } from 'react-dom';
@@ -22,7 +23,10 @@ import {
 } from '../../prototype/pvt/pvt-prototype-engine';
 
 type PrototypeView = 'preparation' | 'countdown' | 'running' | 'summary';
-type PreparationIssue = 'orientation_changed_during_countdown';
+type PreparationIssue =
+  | 'orientation_changed_during_countdown'
+  | 'visibility_lost_during_countdown'
+  | 'focus_lost_during_countdown';
 
 interface OrientationIdentity {
   readonly key: string;
@@ -54,6 +58,7 @@ export function PvtPrototypeScreen({
   const locale = i18n.resolvedLanguage === 'fr' ? 'fr-FR' : 'en-GB';
   const desktopPreview = typeof window.matchMedia !== 'function' ||
     !window.matchMedia('(pointer: coarse)').matches;
+  const immersiveView = view === 'countdown' || view === 'running';
 
   const applySnapshot = useCallback((nextSnapshot: PvtPrototypeSnapshot) => {
     setSnapshot(nextSnapshot);
@@ -68,6 +73,14 @@ export function PvtPrototypeScreen({
       applySnapshot(engine.interrupt(reason));
     }
   }, [applySnapshot]);
+
+  useEffect(() => {
+    if (!immersiveView) {
+      return undefined;
+    }
+    document.body.classList.add('pvt-prototype-immersive');
+    return () => document.body.classList.remove('pvt-prototype-immersive');
+  }, [immersiveView]);
 
   useEffect(() => {
     if (view !== 'preparation') {
@@ -87,12 +100,17 @@ export function PvtPrototypeScreen({
       return undefined;
     }
 
-    const returnToPreparation = () => {
+    let cancelled = false;
+    const returnToPreparation = (issue: PreparationIssue) => {
+      if (cancelled) {
+        return;
+      }
+      cancelled = true;
       const currentOrientation = getOrientationIdentity();
       engineRef.current = undefined;
       setSnapshot(undefined);
       setLandscape(currentOrientation.landscape);
-      setPreparationIssue('orientation_changed_during_countdown');
+      setPreparationIssue(issue);
       setView('preparation');
     };
     const orientationStillValid = (): boolean => {
@@ -103,19 +121,39 @@ export function PvtPrototypeScreen({
     };
     const handleOrientation = () => {
       if (!orientationStillValid()) {
-        returnToPreparation();
+        returnToPreparation('orientation_changed_during_countdown');
       }
     };
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        returnToPreparation('visibility_lost_during_countdown');
+      }
+    };
+    const handleBlur = () => returnToPreparation('focus_lost_during_countdown');
 
     window.addEventListener('resize', handleOrientation);
     screen.orientation?.addEventListener('change', handleOrientation);
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('blur', handleBlur);
+
+    const removeListeners = () => {
+      window.removeEventListener('resize', handleOrientation);
+      screen.orientation?.removeEventListener('change', handleOrientation);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('blur', handleBlur);
+    };
 
     if (!orientationStillValid()) {
-      returnToPreparation();
-      return () => {
-        window.removeEventListener('resize', handleOrientation);
-        screen.orientation?.removeEventListener('change', handleOrientation);
-      };
+      returnToPreparation('orientation_changed_during_countdown');
+      return removeListeners;
+    }
+    if (document.visibilityState === 'hidden') {
+      returnToPreparation('visibility_lost_during_countdown');
+      return removeListeners;
+    }
+    if (!document.hasFocus()) {
+      returnToPreparation('focus_lost_during_countdown');
+      return removeListeners;
     }
 
     if (countdown <= 0) {
@@ -125,17 +163,13 @@ export function PvtPrototypeScreen({
       initialOrientationRef.current = currentOrientation;
       setSnapshot(engine.start());
       setView('running');
-      return () => {
-        window.removeEventListener('resize', handleOrientation);
-        screen.orientation?.removeEventListener('change', handleOrientation);
-      };
+      return removeListeners;
     }
 
     const timer = window.setTimeout(() => setCountdown((value) => value - 1), 1_000);
     return () => {
       window.clearTimeout(timer);
-      window.removeEventListener('resize', handleOrientation);
-      screen.orientation?.removeEventListener('change', handleOrientation);
+      removeListeners();
     };
   }, [countdown, createEngine, desktopPreview, view]);
 
@@ -190,6 +224,10 @@ export function PvtPrototypeScreen({
     window.addEventListener('blur', handleBlur);
     window.addEventListener('resize', handleOrientation);
     screen.orientation?.addEventListener('change', handleOrientation);
+    handleVisibility();
+    if (document.visibilityState !== 'hidden' && !document.hasFocus()) {
+      interrupt('focus_lost');
+    }
     handleOrientation();
     return () => {
       document.removeEventListener('visibilitychange', handleVisibility);
@@ -224,18 +262,38 @@ export function PvtPrototypeScreen({
     }
   }
 
-  return (
-    <section className="screen-stack pvt-prototype" aria-labelledby="pvt-prototype-heading">
-      <div className="hero-card">
-        <p className="eyebrow">{t('pvtPrototype.eyebrow')}</p>
-        <h1 id="pvt-prototype-heading">{t('pvtPrototype.heading')}</h1>
-        <p>{t('pvtPrototype.introduction')}</p>
-      </div>
+  function handleKeyboardResponse(event: ReactKeyboardEvent<HTMLButtonElement>): void {
+    if (!desktopPreview || event.repeat || view !== 'running' ||
+      (event.key !== 'Enter' && event.key !== ' ')) {
+      return;
+    }
+    event.preventDefault();
+    const engine = engineRef.current;
+    if (engine !== undefined) {
+      applySnapshot(engine.respond());
+    }
+  }
 
-      <aside className="prototype-warning" role="note">
-        <strong>{t('pvtPrototype.warningTitle')}</strong>
-        <p>{t('pvtPrototype.warningDescription')}</p>
-      </aside>
+  return (
+    <section
+      className={`screen-stack pvt-prototype${immersiveView ? ' is-immersive' : ''}`}
+      aria-labelledby={immersiveView ? undefined : 'pvt-prototype-heading'}
+      aria-label={immersiveView ? t(`pvtPrototype.${view === 'countdown' ? 'countdownTitle' : 'runningTitle'}`) : undefined}
+    >
+      {!immersiveView && (
+        <>
+          <div className="hero-card">
+            <p className="eyebrow">{t('pvtPrototype.eyebrow')}</p>
+            <h1 id="pvt-prototype-heading">{t('pvtPrototype.heading')}</h1>
+            <p>{t('pvtPrototype.introduction')}</p>
+          </div>
+
+          <aside className="prototype-warning" role="note">
+            <strong>{t('pvtPrototype.warningTitle')}</strong>
+            <p>{t('pvtPrototype.warningDescription')}</p>
+          </aside>
+        </>
+      )}
 
       {view === 'preparation' && (
         <section className="info-card" aria-labelledby="pvt-preparation-heading">
@@ -257,6 +315,16 @@ export function PvtPrototypeScreen({
           {preparationIssue === 'orientation_changed_during_countdown' && (
             <p className="error-message" role="alert">
               {t('pvtPrototype.countdownOrientationChanged')}
+            </p>
+          )}
+          {preparationIssue === 'visibility_lost_during_countdown' && (
+            <p className="error-message" role="alert">
+              {t('pvtPrototype.countdownVisibilityLost')}
+            </p>
+          )}
+          {preparationIssue === 'focus_lost_during_countdown' && (
+            <p className="error-message" role="alert">
+              {t('pvtPrototype.countdownFocusLost')}
             </p>
           )}
           <dl className="prototype-parameters">
@@ -311,6 +379,7 @@ export function PvtPrototypeScreen({
             type="button"
             aria-label={t('pvtPrototype.responseSurfaceLabel')}
             onPointerDown={handleResponse}
+            onKeyDown={handleKeyboardResponse}
           >
             <span aria-hidden="true">
               {snapshot.phase === 'stimulus' ? t('pvtPrototype.stimulus') : ''}
@@ -331,12 +400,19 @@ export function PvtPrototypeScreen({
               {t(`pvtPrototype.interruption.${snapshot.interruptionReason ?? 'focus_lost'}`)}
             </div>
           )}
-          <p>{t('pvtPrototype.summaryCaution')}</p>
+          <p>{t('pvtPrototype.summaryCaution', {
+            timeoutMilliseconds: pvtPrototypeTimeoutMs
+          })}</p>
           <dl className="prototype-summary">
             <SummaryItem label={t('pvtPrototype.validResponses')} value={snapshot.summary.validResponseCount} />
             <SummaryItem label={t('pvtPrototype.falseStarts')} value={snapshot.summary.falseStartCount} />
             <SummaryItem label={t('pvtPrototype.timeouts')} value={snapshot.summary.timeoutCount} />
-            <SummaryItem label={t('pvtPrototype.candidateLapses')} value={snapshot.summary.lapseCount} />
+            <SummaryItem
+              label={t('pvtPrototype.candidateLapses', {
+                milliseconds: pvtPrototypeCandidateLapseThresholdMs
+              })}
+              value={snapshot.summary.lapseCount}
+            />
             <SummaryItem
               label={t('pvtPrototype.meanReciprocalRt')}
               value={formatOptionalNumber(
@@ -351,7 +427,7 @@ export function PvtPrototypeScreen({
             />
           </dl>
           <p className="field-help">{t('pvtPrototype.memoryOnly', {
-            attempts: snapshot.attempts.length,
+            count: snapshot.attempts.length,
             version: snapshot.version
           })}</p>
           <button className="secondary-button" type="button" onClick={beginCountdown}>
@@ -360,7 +436,9 @@ export function PvtPrototypeScreen({
         </section>
       )}
 
-      <p className="prototype-version">{t('pvtPrototype.version', { version: pvtPrototypeVersion })}</p>
+      {!immersiveView && (
+        <p className="prototype-version">{t('pvtPrototype.version', { version: pvtPrototypeVersion })}</p>
+      )}
     </section>
   );
 }

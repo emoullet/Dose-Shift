@@ -118,6 +118,9 @@ export class PvtPrototypeEngine {
       return this.getSnapshot();
     }
     const elapsedMs = this.getElapsedMs();
+    if (this.resolveTimeoutIfDue(elapsedMs)) {
+      return this.getSnapshot();
+    }
     if (elapsedMs >= pvtPrototypeDurationMs) {
       return this.completeAtDuration(elapsedMs);
     }
@@ -152,6 +155,9 @@ export class PvtPrototypeEngine {
       return this.getSnapshot();
     }
     const elapsedMs = this.getElapsedMs();
+    if (this.resolveTimeoutIfDue(elapsedMs)) {
+      return this.getSnapshot();
+    }
     if (elapsedMs >= pvtPrototypeDurationMs) {
       return this.completeAtDuration(elapsedMs);
     }
@@ -159,16 +165,6 @@ export class PvtPrototypeEngine {
       return this.activateStimulus();
     }
 
-    const stimulusOffsetMs = this.pendingAttempt?.stimulusActivatedOffsetMs;
-    if (stimulusOffsetMs !== undefined &&
-      elapsedMs - stimulusOffsetMs >= pvtPrototypeTimeoutMs) {
-      this.finishPendingAttempt({
-        endedOffsetMs: elapsedMs,
-        outcome: 'timeout',
-        analyticalReactionTimeMs: pvtPrototypeTimeoutAnalyticalReactionTimeMs
-      });
-      this.scheduleNextAttempt(elapsedMs);
-    }
     return this.getSnapshot();
   }
 
@@ -230,13 +226,35 @@ export class PvtPrototypeEngine {
     this.pendingAttempt = undefined;
   }
 
+  private resolveTimeoutIfDue(elapsedMs: number): boolean {
+    const stimulusOffsetMs = this.pendingAttempt?.stimulusActivatedOffsetMs;
+    if (stimulusOffsetMs === undefined ||
+      elapsedMs - stimulusOffsetMs < pvtPrototypeTimeoutMs) {
+      return false;
+    }
+
+    this.finishPendingAttempt({
+      endedOffsetMs: elapsedMs,
+      outcome: 'timeout',
+      analyticalReactionTimeMs: pvtPrototypeTimeoutAnalyticalReactionTimeMs
+    });
+    if (elapsedMs >= pvtPrototypeDurationMs) {
+      this.phase = 'completed';
+    } else {
+      this.scheduleNextAttempt(elapsedMs);
+    }
+    return true;
+  }
+
   private completeAtDuration(elapsedMs: number): PvtPrototypeSnapshot {
-    if (this.pendingAttempt !== undefined) {
+    if (this.pendingAttempt?.stimulusActivatedOffsetMs !== undefined) {
       this.finishPendingAttempt({
         endedOffsetMs: Math.min(elapsedMs, pvtPrototypeDurationMs),
         outcome: 'technical_invalid',
         technicalInvalidReason: 'session_ended'
       });
+    } else {
+      this.pendingAttempt = undefined;
     }
     this.phase = 'completed';
     return this.getSnapshot();

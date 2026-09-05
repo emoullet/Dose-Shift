@@ -112,6 +112,29 @@ describe('PVT timing prototype engine', () => {
   });
 
   it.each([
+    ['at the exact threshold', 31_000],
+    ['after the threshold', 31_500]
+  ] as const)('gives a due timeout priority over a pointer response %s', (_label, responseAtMs) => {
+    const clock = new TestClock();
+    const engine = new PvtPrototypeEngine(clock, { next: () => 0 });
+    engine.start();
+    clock.value = 1_000;
+    engine.activateStimulus();
+
+    clock.value = responseAtMs;
+    const snapshot = engine.respond();
+
+    expect(snapshot.attempts[0]).toMatchObject({
+      outcome: 'timeout',
+      endedOffsetMs: responseAtMs,
+      analyticalReactionTimeMs: 30_000
+    });
+    expect(snapshot.attempts[0]).not.toHaveProperty('responseOffsetMs');
+    expect(snapshot.attempts[0]).not.toHaveProperty('reactionTimeMs');
+    expect(snapshot.summary.lapseCount).toBe(1);
+  });
+
+  it.each([
     'visibility_lost',
     'focus_lost',
     'orientation_changed'
@@ -134,7 +157,7 @@ describe('PVT timing prototype engine', () => {
     });
   });
 
-  it('stops at 180 seconds and does not accept later responses', () => {
+  it('does not create an attempt for an unactivated future stimulus at 180 seconds', () => {
     const clock = new TestClock();
     const engine = new PvtPrototypeEngine(clock, { next: () => 0 });
     engine.start();
@@ -144,13 +167,50 @@ describe('PVT timing prototype engine', () => {
 
     expect(completed.phase).toBe('completed');
     expect(completed.elapsedMs).toBe(pvtPrototypeDurationMs);
+    expect(completed.attempts).toHaveLength(0);
+    clock.value += 500;
+    expect(engine.respond()).toEqual(engine.getSnapshot());
+  });
+
+  it('gives a timeout due at the 180-second boundary priority over session completion', () => {
+    const clock = new TestClock();
+    const engine = new PvtPrototypeEngine(clock, { next: () => 0 });
+    engine.start();
+    clock.value = 150_000;
+    engine.activateStimulus();
+
+    clock.value = pvtPrototypeDurationMs;
+    const completed = engine.advance();
+
+    expect(completed.phase).toBe('completed');
+    expect(completed.attempts[0]).toMatchObject({
+      outcome: 'timeout',
+      endedOffsetMs: pvtPrototypeDurationMs,
+      analyticalReactionTimeMs: 30_000
+    });
+    expect(completed.attempts[0]).not.toHaveProperty('responseOffsetMs');
+    expect(completed.summary.timeoutCount).toBe(1);
+    expect(completed.summary.lapseCount).toBe(1);
+  });
+
+  it('retains an activated stimulus censored by the 180-second boundary', () => {
+    const clock = new TestClock();
+    const engine = new PvtPrototypeEngine(clock, { next: () => 0 });
+    engine.start();
+    clock.value = 150_001;
+    engine.activateStimulus();
+
+    clock.value = pvtPrototypeDurationMs;
+    const completed = engine.advance();
+
+    expect(completed.phase).toBe('completed');
     expect(completed.attempts[0]).toMatchObject({
       outcome: 'technical_invalid',
       technicalInvalidReason: 'session_ended',
       endedOffsetMs: pvtPrototypeDurationMs
     });
-    clock.value += 500;
-    expect(engine.respond()).toEqual(engine.getSnapshot());
+    expect(completed.summary.timeoutCount).toBe(0);
+    expect(completed.summary.lapseCount).toBe(0);
   });
 });
 
