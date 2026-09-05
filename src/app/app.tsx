@@ -8,6 +8,7 @@ import { AppShell } from '../ui/components/app-shell';
 import { DataScreen } from '../ui/screens/data-screen';
 import { HomeScreen } from '../ui/screens/home-screen';
 import { NotFoundScreen } from '../ui/screens/not-found-screen';
+import { PvtPrototypeScreen } from '../ui/screens/pvt-prototype-screen';
 import { SettingsScreen } from '../ui/screens/settings-screen';
 
 export interface AppDependencies {
@@ -26,6 +27,7 @@ export function App({ dependencies = defaultDependencies }: { dependencies?: App
       <Routes>
         <Route element={<AppShell />}>
           <Route index element={<HomeScreen dependencies={dependencies} />} />
+          <Route path="pvt-prototype" element={<PvtPrototypeScreen />} />
           <Route path="data" element={<DataScreen />} />
           <Route path="settings" element={<SettingsScreen />} />
           <Route path="*" element={<NotFoundScreen />} />

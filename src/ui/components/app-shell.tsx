@@ -20,6 +20,7 @@ export function AppShell() {
 
       <nav className="app-navigation" aria-label={t('app.name')}>
         <NavLink to="/" end>{t('navigation.home')}</NavLink>
+        <NavLink to="/pvt-prototype">{t('navigation.pvtPrototype')}</NavLink>
         <NavLink to="/data">{t('navigation.data')}</NavLink>
         <NavLink to="/settings">{t('navigation.settings')}</NavLink>
       </nav>
