@@ -2,7 +2,7 @@
 
 ## Status
 
-Implemented foundation, validated study domain model, local persistence, complete JSON backup envelope, draft study setup with a controlled phase-plan preview, and an isolated technical PVT timing prototype. Later measurement workflows remain intentionally open.
+Implemented foundation, validated study domain model, local persistence, complete JSON backup envelope, draft study setup with a controlled phase-plan preview, an isolated technical PVT timing prototype, and an isolated associative-memory prototype. Later measurement workflows remain intentionally open.
 
 ## Product shape
 
@@ -161,6 +161,18 @@ If an integrated PVT is implemented, raw trial-level reaction times should be pr
 The current technical timing prototype is deliberately outside that study architecture. Its versioned engine uses an injected monotonic clock, holds raw attempts and derived summaries only in memory, and has no dependency on domain schemas, IndexedDB adapters, migrations, or export envelopes. Page visibility, focus, and orientation loss invalidate the run. The PWA exposes the harness in English and French for mobile-first testing and desktop preview, while explicitly stating that neither the browser instrument nor its candidate 355 ms threshold has been validated.
 
 The prototype may inform a later physical timing-validation lot. It cannot supply study sessions, familiarization evidence, or cognitive-test configuration, and it does not amend controlled protocol version 1.1. A later decision must define acceptable hardware/browser combinations, final scoring rules, and protocol wording before any integrated PVT result can enter `StudyData`.
+
+## Associative-memory prototype architecture
+
+The associative-memory technical prototype is also outside the study architecture. A pure, versioned engine owns candidate stimulus generation, independent encoding and recognition orders, a fixed-point-free permutation of encoded values for associative distractors, balanced answer sides, monotonic offsets, raw in-memory trials, timeouts, interruption state, and derivable summaries. It imports no study-domain, persistence, migration, or serialization code.
+
+The presentation layer supplies a local versioned catalog of forty SVG object pictograms and administers ten pairs per run. It loads and decodes all ten selected images before starting the monotonic run clock, fails visibly if any selected asset cannot be prepared, and samples each software activation immediately before the corresponding synchronous interface commit. Candidate difficulty changes only the number of digits in the arbitrary values: two, three, or four. Each pair is exposed for 3,000 ms followed by a 500 ms neutral interval. The 30-second empty delay exists only to exercise the technical transition; it does not reproduce the protocol interval occupied by self-ratings and the PVT.
+
+Recognition uses two values that were both encoded in the run, so item familiarity alone cannot identify the association. A synchronous per-prompt guard makes the first accepted response final; repeated keyboard events, non-primary pointers, and events retained from an already-resolved control cannot answer a later prompt. A response timeout is recorded as incorrect without an invented selection or response time. Accuracy is the primary prototype summary; median response time uses observed responses only and starts from a software prompt-activation proxy rather than measured physical display onset. Focus, visibility, and orientation changes invalidate the complete run, retain partial technical events in memory, and suppress a valid accuracy score.
+
+The bilingual route provides phone landscape administration and keyboard desktop preview. Object identifiers and data remain locale-neutral; localized object names are accessibility text only. That text-based assistive presentation is not claimed to be scientifically equivalent to the visual task.
+
+This prototype cannot select or freeze a difficulty, provide familiarization evidence, enforce pair non-reuse across reloads, or populate the existing `AssociativeMemorySession`. The future familiarization and integrated-instrument lots must separately resolve the real intervening battery, repeated-form equivalence, persistent reuse history, accessibility administration conditions, and the domain fields needed for encoding/recognition order, timeouts, interruptions, generator provenance, and frozen administration settings. Controlled protocol version 1.1 is unchanged.
 
 ## Security and privacy
 
