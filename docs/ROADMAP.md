@@ -23,12 +23,13 @@ Only explicit human direction may promote a product lot from `Proposed`. Scienti
 | Validated study domain, persistence, migrations, and versioned export foundation | Done | Present on the default branch with domain, persistence, migration, and serialization tests. |
 | Durable supervised multi-agent delivery workflow | Done | Merged in PR #6 on 2026-08-28. |
 | Draft study setup and controlled phase-plan preview | Done | Merged in PR #7 on 2026-08-30, including the accepted edit-on-resume correction. |
+| PVT timing prototype and validation harness | Done | Merged in PR #8 on 2026-09-05 after target-phone functional acceptance. |
 
 ## Active product lot
 
 | Lot | Status | Scope | Approval note |
 | --- | --- | --- | --- |
-| PVT timing prototype and validation harness | In review | Versioned, PVT-B-inspired 180-second browser timing prototype with injected monotonic clock, 1–4-second pseudo-random intervals, touch response, raw in-memory attempts, derived technical summaries, interruption handling, and bilingual mobile-first UI. No study data, persistence, export, medical interpretation, or validation claim. | Seven methodology, safety-boundary, and implementation decisions explicitly approved on 2026-08-30. |
+| Associative-memory technical prototype | In progress | Versioned, isolated object–value memory harness with ten local pictograms, candidate two-/three-/four-digit difficulty levels, fixed encoding, a non-scientific technical delay, two-choice recognition, raw in-memory trials, accuracy and secondary observed response time, interruption handling, and bilingual mobile-first UI. No study data, persistence, export, calibration, familiarization evidence, or validation claim. | Seven methodology, scoring, safety-boundary, and interaction decisions explicitly approved on 2026-09-05. |
 
 ## Proposed product backlog
 
@@ -40,7 +41,6 @@ The following lots are proposals, not commitments. Their ordering is provisional
 | Planned medication-intake recording flow | Proposed | Medication and schedule semantics, partial-dose handling, deviations, warnings, and stop conditions. |
 | Scheduled cognitive-session shell and self-ratings | Proposed | Instrument order, anchors, missingness, session timing, and frozen configuration. |
 | PVT hardware validation and study-instrument decision | Proposed | Physical timing validation, acceptable device/browser combinations, final lapse threshold, instrument naming, protocol amendment, and whether validated results may enter study data. |
-| Associative-memory task UI and stimulus generator | Proposed | Difficulty calibration, frozen rules, stimulus generation, scoring, trial preservation, and practice effects. |
 | Catheterization and night-observation entry flows | Proposed | Leakage semantics, timestamp correction, safety-warning visibility, and audit behavior. |
 | Daily context, confounders, and analysis annotations | Proposed | Exclusion semantics, reversibility, structured events, transition-day treatment, and sensitivity-analysis expectations. |
 | Complete JSON import/export and analysis CSV exports | Proposed | Format evolution, runtime validation, safe failure, privacy warnings, and non-destructive import behavior. |

@@ -280,6 +280,168 @@ p {
   background: #183d3d;
 }
 
+.memory-difficulty {
+  margin-bottom: 1rem;
+}
+
+.memory-difficulty-options {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.memory-difficulty-options label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #b5c3bd;
+  border-radius: 0.65rem;
+  background: #fbfcfa;
+  font-weight: 700;
+}
+
+.memory-difficulty-options input {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.memory-stage {
+  display: grid;
+  min-width: 0;
+  min-height: 100%;
+  place-items: center;
+  align-content: center;
+  gap: 0.75rem;
+  padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  color: #f8f9f5;
+  background: #102626;
+  text-align: center;
+}
+
+.memory-stage h1 {
+  margin: 0;
+  color: inherit;
+  font-size: clamp(1.25rem, 4vw, 2rem);
+}
+
+.memory-countdown strong,
+.memory-delay strong {
+  color: #e5ff75;
+  font-size: clamp(4rem, 22vw, 9rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.memory-pair,
+.memory-recognition-panel {
+  display: grid;
+  min-width: 0;
+  place-items: center;
+}
+
+.memory-pair {
+  grid-template-columns: minmax(8rem, 1fr) minmax(7rem, 0.7fr);
+  gap: clamp(1rem, 7vw, 4rem);
+  width: min(100%, 48rem);
+}
+
+.memory-object {
+  display: block;
+  width: min(42vw, 18rem);
+  max-width: 100%;
+  max-height: 42vh;
+  aspect-ratio: 1;
+  padding: clamp(0.75rem, 3vw, 1.5rem);
+  border-radius: 1.25rem;
+  background: #f8f9f5;
+  object-fit: contain;
+}
+
+.memory-value {
+  color: #e5ff75;
+  font-size: clamp(3rem, 14vw, 8rem);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.memory-progress,
+.memory-help {
+  color: #c9d8d4;
+  font-size: clamp(0.82rem, 2.5vw, 1rem);
+}
+
+.memory-recognition {
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  align-content: stretch;
+}
+
+.memory-recognition-panel {
+  grid-template-columns: minmax(8rem, 0.8fr) minmax(12rem, 1.2fr);
+  gap: clamp(1rem, 5vw, 3rem);
+  width: min(100%, 52rem);
+  align-self: center;
+  outline-offset: 0.4rem;
+}
+
+.memory-answer-group {
+  width: 100%;
+  margin: 0;
+}
+
+.memory-answer-group legend {
+  width: 100%;
+  margin-bottom: 0.75rem;
+  color: #f8f9f5;
+  text-align: center;
+}
+
+.memory-answer-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.memory-answer-button {
+  min-width: 0;
+  min-height: 4.5rem;
+  padding: 0.75rem;
+  border: 0.18rem solid #e5ff75;
+  border-radius: 0.9rem;
+  color: #183d3d;
+  background: #e5ff75;
+  font-size: clamp(1.65rem, 7vw, 3.25rem);
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.memory-stop-button {
+  min-height: 2.75rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid #c9d8d4;
+  border-radius: 0.65rem;
+  color: #f8f9f5;
+  background: #183d3d;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.memory-stop-overlay {
+  position: absolute;
+  right: max(0.75rem, env(safe-area-inset-right));
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+  z-index: 2;
+}
+
+.memory-neutral {
+  background: #183d3d;
+}
+
 .prototype-version {
   overflow-wrap: anywhere;
 }
@@ -524,7 +686,7 @@ legend {
   position: sticky;
   bottom: 0;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   padding: 0.45rem max(0.45rem, env(safe-area-inset-right)) max(0.45rem, env(safe-area-inset-bottom)) max(0.45rem, env(safe-area-inset-left));
   border-top: 1px solid #dce3dc;
   background: rgb(255 255 255 / 96%);
@@ -626,7 +788,23 @@ body.pvt-prototype-immersive {
   overflow: hidden;
 }
 
+body.memory-prototype-immersive {
+  overflow: hidden;
+}
+
 body.pvt-prototype-immersive .app-frame {
+  display: block;
+  width: 100vw;
+  max-width: none;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: none;
+}
+
+body.memory-prototype-immersive .app-frame {
   display: block;
   width: 100vw;
   max-width: none;
@@ -643,7 +821,20 @@ body.pvt-prototype-immersive .app-navigation {
   display: none;
 }
 
+body.memory-prototype-immersive .app-header,
+body.memory-prototype-immersive .app-navigation {
+  display: none;
+}
+
 body.pvt-prototype-immersive .app-content {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  padding: 0;
+  overflow: hidden;
+}
+
+body.memory-prototype-immersive .app-content {
   width: 100vw;
   height: 100vh;
   height: 100dvh;
@@ -655,6 +846,45 @@ body.pvt-prototype-immersive .app-content {
   width: 100%;
   height: 100%;
   gap: 0;
+}
+
+.memory-prototype.is-immersive {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  gap: 0;
+}
+
+@media (orientation: landscape) and (pointer: coarse) and (max-height: 500px) {
+  .memory-stage {
+    gap: 0.35rem;
+    padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(0.5rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left));
+  }
+
+  .memory-recognition .memory-object {
+    max-height: 38vh;
+  }
+
+  .memory-answer-group legend {
+    margin-bottom: 0.3rem;
+    font-size: 0.8rem;
+  }
+
+  .memory-answer-button {
+    min-height: 3.25rem;
+    padding: 0.35rem;
+  }
+
+  .memory-help {
+    font-size: 0.75rem;
+    line-height: 1.25;
+  }
+
+  .memory-stop-button {
+    min-height: 2.25rem;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.78rem;
+  }
 }
 
 .pvt-prototype.is-immersive .pvt-countdown {
